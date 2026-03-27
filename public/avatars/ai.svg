@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Blue background -->
+  <circle cx="60" cy="60" r="58" fill="#3B82F6" stroke="#1A1A1A" stroke-width="3"/>
+
+  <!-- Left arm - blue cardigan -->
+  <path d="M36 72 C30 74 24 80 24 88 C24 94 28 98 34 97 L38 95 L38 72 Z" fill="#1D4ED8" stroke="#1A1A1A" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Right arm + hand holding calculator -->
+  <path d="M84 72 C90 74 96 80 96 88 C96 94 92 98 86 97 L82 95 L82 72 Z" fill="#1D4ED8" stroke="#1A1A1A" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- Body - blue outfit -->
+  <rect x="36" y="67" width="48" height="38" rx="10" fill="#1D4ED8" stroke="#1A1A1A" stroke-width="2.5"/>
+  <!-- Collar detail -->
+  <path d="M54 67 L57 73 L60 70 L63 73 L66 67 Z" fill="white" stroke="#1A1A1A" stroke-width="1.8" stroke-linejoin="round"/>
+
+  <!-- Mini calculator icon on body -->
+  <rect x="50" y="78" width="20" height="16" rx="3" fill="#93C5FD" stroke="#1A1A1A" stroke-width="1.8"/>
+  <rect x="53" y="81" width="5" height="3" rx="1" fill="white" stroke="#1A1A1A" stroke-width="1"/>
+  <rect x="61" y="81" width="5" height="3" rx="1" fill="white" stroke="#1A1A1A" stroke-width="1"/>
+  <rect x="53" y="87" width="5" height="3" rx="1" fill="white" stroke="#1A1A1A" stroke-width="1"/>
+  <rect x="61" y="87" width="5" height="3" rx="1" fill="white" stroke="#1A1A1A" stroke-width="1"/>
+
+  <!-- Neck -->
+  <rect x="55" y="62" width="10" height="7" rx="3" fill="white" stroke="#1A1A1A" stroke-width="2.5"/>
+
+  <!-- Head -->
+  <circle cx="60" cy="43" r="22" fill="white" stroke="#1A1A1A" stroke-width="3"/>
+
+  <!-- Ears -->
+  <ellipse cx="38" cy="43" rx="4" ry="5.5" fill="white" stroke="#1A1A1A" stroke-width="2.5"/>
+  <ellipse cx="82" cy="43" rx="4" ry="5.5" fill="white" stroke="#1A1A1A" stroke-width="2.5"/>
+
+  <!-- Hair - neat, side parted, black -->
+  <path d="M38 43 C38 29 43 21 60 21 C76 21 82 29 82 43 C80 36 75 30 68 27 C64 25 62 24 60 24 C56 24 51 26 47 29 C42 33 39 38 38 43 Z" fill="#1A1A1A" stroke="#1A1A1A" stroke-width="2.5"/>
+  <!-- Side part detail -->
+  <path d="M60 21 C60 21 58 22 56 23 C55 23 57 22 60 21 Z" fill="#1A1A1A" stroke="#1A1A1A" stroke-width="1"/>
+
+  <!-- Glasses - round frames -->
+  <rect x="44" y="38" width="13" height="9" rx="4.5" fill="none" stroke="#1A1A1A" stroke-width="2.2"/>
+  <rect x="63" y="38" width="13" height="9" rx="4.5" fill="none" stroke="#1A1A1A" stroke-width="2.2"/>
+  <!-- Bridge -->
+  <line x1="57" y1="42.5" x2="63" y2="42.5" stroke="#1A1A1A" stroke-width="2"/>
+  <!-- Temples -->
+  <line x1="44" y1="42.5" x2="40" y2="43" stroke="#1A1A1A" stroke-width="2"/>
+  <line x1="76" y1="42.5" x2="80" y2="43" stroke="#1A1A1A" stroke-width="2"/>
+
+  <!-- Eyes behind glasses -->
+  <circle cx="50.5" cy="42.5" r="2.5" fill="#1A1A1A"/>
+  <circle cx="69.5" cy="42.5" r="2.5" fill="#1A1A1A"/>
+  <circle cx="51.5" cy="41.3" r="0.9" fill="white"/>
+  <circle cx="70.5" cy="41.3" r="0.9" fill="white"/>
+
+  <!-- Blush -->
+  <circle cx="43" cy="49" r="5" fill="#FFB7C5" opacity="0.6"/>
+  <circle cx="77" cy="49" r="5" fill="#FFB7C5" opacity="0.6"/>
+
+  <!-- Smile - gentle -->
+  <path d="M54 53 Q60 57 66 53" stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>

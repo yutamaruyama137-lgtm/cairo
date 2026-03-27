@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Orange background -->
+  <circle cx="60" cy="60" r="58" fill="#F97316" stroke="#1A1A1A" stroke-width="3"/>
+
+  <!-- Left arm - dark suit -->
+  <path d="M36 72 C30 74 24 80 24 88 C24 94 28 98 34 97 L38 95 L38 72 Z" fill="#1E3A5F" stroke="#1A1A1A" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Right arm - dark suit -->
+  <path d="M84 72 C90 74 96 80 96 88 C96 94 92 98 86 97 L82 95 L82 72 Z" fill="#1E3A5F" stroke="#1A1A1A" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- Body - dark navy suit -->
+  <rect x="36" y="67" width="48" height="38" rx="10" fill="#1E3A5F" stroke="#1A1A1A" stroke-width="2.5"/>
+  <!-- White shirt -->
+  <path d="M54 67 L57.5 78 L60 73 L62.5 78 L66 67 Z" fill="white" stroke="#1A1A1A" stroke-width="1.8" stroke-linejoin="round"/>
+  <!-- Orange tie -->
+  <path d="M60 69 L57.5 76 L60 83 L62.5 76 Z" fill="#F97316" stroke="#1A1A1A" stroke-width="1.8"/>
+
+  <!-- Neck -->
+  <rect x="55" y="62" width="10" height="7" rx="3" fill="white" stroke="#1A1A1A" stroke-width="2.5"/>
+
+  <!-- Head -->
+  <circle cx="60" cy="43" r="22" fill="white" stroke="#1A1A1A" stroke-width="3"/>
+
+  <!-- Ears -->
+  <ellipse cx="38" cy="43" rx="4" ry="5.5" fill="white" stroke="#1A1A1A" stroke-width="2.5"/>
+  <ellipse cx="82" cy="43" rx="4" ry="5.5" fill="white" stroke="#1A1A1A" stroke-width="2.5"/>
+
+  <!-- Hair - short, dark, swept to side -->
+  <path d="M38 43 C38 30 42 22 60 21 C74 21 80 27 82 35 C83 39 83 43 82 43 C80 37 76 31 70 28 C65 26 62 25 60 25 C55 25 49 27 45 30 C41 33 38 38 38 43 Z" fill="#2D1E14" stroke="#1A1A1A" stroke-width="2.5"/>
+  <!-- Hair front tuft -->
+  <path d="M50 25 C52 21 56 20 60 21 C57 20 53 22 50 25 Z" fill="#2D1E14" stroke="#1A1A1A" stroke-width="1.5"/>
+
+  <!-- Eyes - dot style -->
+  <circle cx="52" cy="41" r="3" fill="#1A1A1A"/>
+  <circle cx="68" cy="41" r="3" fill="#1A1A1A"/>
+  <circle cx="53.2" cy="39.8" r="1.1" fill="white"/>
+  <circle cx="69.2" cy="39.8" r="1.1" fill="white"/>
+
+  <!-- Blush -->
+  <circle cx="44" cy="47" r="5.5" fill="#FFB7C5" opacity="0.65"/>
+  <circle cx="76" cy="47" r="5.5" fill="#FFB7C5" opacity="0.65"/>
+
+  <!-- Confident smile -->
+  <path d="M54 52 Q60 57 66 52" stroke="#1A1A1A" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+</svg>

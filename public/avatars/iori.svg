@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Rose background -->
+  <circle cx="60" cy="60" r="58" fill="#F43F5E" stroke="#1A1A1A" stroke-width="3"/>
+
+  <!-- Left arm - rose outfit -->
+  <path d="M36 72 C30 74 24 80 24 88 C24 94 28 98 34 97 L38 95 L38 72 Z" fill="#BE123C" stroke="#1A1A1A" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Right arm holding star wand -->
+  <path d="M84 72 C90 74 96 80 96 88 C96 94 92 98 86 97 L82 95 L82 72 Z" fill="#BE123C" stroke="#1A1A1A" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- Body - rose/pink bright top -->
+  <rect x="36" y="67" width="48" height="38" rx="10" fill="#BE123C" stroke="#1A1A1A" stroke-width="2.5"/>
+  <!-- Star on body -->
+  <path d="M60 76 L62 81 L67 81 L63 84 L65 89 L60 86 L55 89 L57 84 L53 81 L58 81 Z" fill="#FDE68A" stroke="#1A1A1A" stroke-width="1.5"/>
+
+  <!-- Neck -->
+  <rect x="55" y="62" width="10" height="7" rx="3" fill="white" stroke="#1A1A1A" stroke-width="2.5"/>
+
+  <!-- Head -->
+  <circle cx="60" cy="43" r="22" fill="white" stroke="#1A1A1A" stroke-width="3"/>
+
+  <!-- Ears -->
+  <ellipse cx="38" cy="43" rx="4" ry="5.5" fill="white" stroke="#1A1A1A" stroke-width="2.5"/>
+  <ellipse cx="82" cy="43" rx="4" ry="5.5" fill="white" stroke="#1A1A1A" stroke-width="2.5"/>
+
+  <!-- Hair - pink pigtails/twin bunches -->
+  <!-- Main head hair -->
+  <path d="M38 43 C38 28 43 21 60 21 C77 21 82 28 82 43 C80 36 76 30 70 27 C66 25 63 24 60 24 C57 24 54 25 50 27 C44 30 40 36 38 43 Z" fill="#EC4899" stroke="#1A1A1A" stroke-width="2.5"/>
+  <!-- Left pigtail bun -->
+  <circle cx="36" cy="26" r="8" fill="#EC4899" stroke="#1A1A1A" stroke-width="2.5"/>
+  <!-- Right pigtail bun -->
+  <circle cx="84" cy="26" r="8" fill="#EC4899" stroke="#1A1A1A" stroke-width="2.5"/>
+  <!-- Pigtail stems -->
+  <path d="M40 30 C39 34 38 38 38 42" stroke="#EC4899" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M80 30 C81 34 82 38 82 42" stroke="#EC4899" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+  <!-- Star hair clips -->
+  <path d="M41 22 L42.5 25 L46 25 L43.5 27 L44.5 30 L41 28 L37.5 30 L38.5 27 L36 25 L39.5 25 Z" fill="#FDE68A" stroke="#1A1A1A" stroke-width="1.5"/>
+  <path d="M79 22 L80.5 25 L84 25 L81.5 27 L82.5 30 L79 28 L75.5 30 L76.5 27 L74 25 L77.5 25 Z" fill="#FDE68A" stroke="#1A1A1A" stroke-width="1.5"/>
+
+  <!-- Eyes - big, energetic -->
+  <circle cx="52" cy="42" r="3.2" fill="#1A1A1A"/>
+  <circle cx="68" cy="42" r="3.2" fill="#1A1A1A"/>
+  <circle cx="53.4" cy="40.8" r="1.2" fill="white"/>
+  <circle cx="69.4" cy="40.8" r="1.2" fill="white"/>
+
+  <!-- Blush - rosy and bright -->
+  <circle cx="44" cy="47" r="6" fill="#FFB7C5" opacity="0.75"/>
+  <circle cx="76" cy="47" r="6" fill="#FFB7C5" opacity="0.75"/>
+
+  <!-- Big energetic smile -->
+  <path d="M53 51 Q60 58 67 51" stroke="#1A1A1A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Mouth open slightly - fill with white arc -->
+  <path d="M54 53 Q60 57 66 53 Q60 59 54 53 Z" fill="white" stroke="none"/>
+</svg>

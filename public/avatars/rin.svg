@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Purple background -->
+  <circle cx="60" cy="60" r="58" fill="#A855F7" stroke="#1A1A1A" stroke-width="3"/>
+
+  <!-- Left arm - purple blazer -->
+  <path d="M36 72 C30 74 24 80 24 88 C24 94 28 98 34 97 L38 95 L38 72 Z" fill="#6D28D9" stroke="#1A1A1A" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Right arm -->
+  <path d="M84 72 C90 74 96 80 96 88 C96 94 92 98 86 97 L82 95 L82 72 Z" fill="#6D28D9" stroke="#1A1A1A" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- Body - purple blazer -->
+  <rect x="36" y="67" width="48" height="38" rx="10" fill="#6D28D9" stroke="#1A1A1A" stroke-width="2.5"/>
+  <!-- White collar -->
+  <path d="M54 67 L57 74 L60 70 L63 74 L66 67 Z" fill="white" stroke="#1A1A1A" stroke-width="1.8" stroke-linejoin="round"/>
+
+  <!-- Mini scale balance icon -->
+  <line x1="60" y1="79" x2="60" y2="90" stroke="#DDD6FE" stroke-width="2"/>
+  <line x1="52" y1="82" x2="68" y2="82" stroke="#DDD6FE" stroke-width="2"/>
+  <circle cx="52" cy="86" r="3" fill="none" stroke="#DDD6FE" stroke-width="1.8"/>
+  <circle cx="68" cy="86" r="3" fill="none" stroke="#DDD6FE" stroke-width="1.8"/>
+
+  <!-- Neck -->
+  <rect x="55" y="62" width="10" height="7" rx="3" fill="white" stroke="#1A1A1A" stroke-width="2.5"/>
+
+  <!-- Head -->
+  <circle cx="60" cy="43" r="22" fill="white" stroke="#1A1A1A" stroke-width="3"/>
+
+  <!-- Ears -->
+  <ellipse cx="38" cy="43" rx="4" ry="5.5" fill="white" stroke="#1A1A1A" stroke-width="2.5"/>
+  <ellipse cx="82" cy="43" rx="4" ry="5.5" fill="white" stroke="#1A1A1A" stroke-width="2.5"/>
+
+  <!-- Hair - dark bob cut (extends below chin line) -->
+  <!-- Back hair layer -->
+  <path d="M38 43 C38 28 43 21 60 21 C77 21 82 28 82 43 L82 57 C82 61 78 64 74 63 L72 63 C72 63 72 57 68 55 L60 54 L52 55 C48 57 48 63 48 63 L46 63 C42 64 38 61 38 57 Z" fill="#2D1A2D" stroke="#1A1A1A" stroke-width="2.5"/>
+  <!-- Bob hair sides -->
+  <path d="M38 43 L38 57 C38 61 41 64 46 63" fill="#2D1A2D" stroke="#1A1A1A" stroke-width="2.5"/>
+  <path d="M82 43 L82 57 C82 61 79 64 74 63" fill="#2D1A2D" stroke="#1A1A1A" stroke-width="2.5"/>
+
+  <!-- Eyes - sharp, focused -->
+  <circle cx="52" cy="41" r="3" fill="#1A1A1A"/>
+  <circle cx="68" cy="41" r="3" fill="#1A1A1A"/>
+  <circle cx="53.2" cy="39.8" r="1.1" fill="white"/>
+  <circle cx="69.2" cy="39.8" r="1.1" fill="white"/>
+
+  <!-- Blush (subtle) -->
+  <circle cx="44" cy="47" r="4.5" fill="#FFB7C5" opacity="0.55"/>
+  <circle cx="76" cy="47" r="4.5" fill="#FFB7C5" opacity="0.55"/>
+
+  <!-- Straight composed mouth (serious) -->
+  <path d="M54 52 Q60 54 66 52" stroke="#1A1A1A" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+</svg>
