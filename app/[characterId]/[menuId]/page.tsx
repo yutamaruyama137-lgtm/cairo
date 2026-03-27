@@ -73,7 +73,6 @@ export default function MenuExecutePage({ params }: Props) {
       <Header
         title={menu.title}
         backHref={`/${character.id}`}
-        backLabel={`${character.name}のメニューへ`}
       />
 
       <main className="max-w-2xl mx-auto px-4 py-8">
