@@ -1,0 +1,30 @@
+{
+  "_comment": "デフォルトテナント設定。Phase 2でSupabaseに移行する。",
+  "_howToAdd": "新しいクライアントを追加するには shibuya.json のように新しいファイルを作る。",
+
+  "tenantId": "default",
+  "name": "JARVIS BOT",
+  "subdomain": "app",
+  "primaryColor": "#e63946",
+  "logoUrl": null,
+
+  "features": [
+    "chat",
+    "menus",
+    "html_preview"
+  ],
+
+  "agents": {
+    "jin": { "enabled": true, "customNameOverride": null },
+    "ai":  { "enabled": true, "customNameOverride": null },
+    "rin": { "enabled": true, "customNameOverride": null },
+    "vi":  { "enabled": true, "customNameOverride": null },
+    "iori":{ "enabled": true, "customNameOverride": null },
+    "saki":{ "enabled": true, "customNameOverride": null }
+  },
+
+  "customSystemPromptSuffix": "",
+
+  "plan": "enterprise",
+  "monthlyExecutionLimit": null
+}

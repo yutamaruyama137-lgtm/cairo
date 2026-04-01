@@ -1,0 +1,5 @@
+{
+  "_comment": "このファイルは attranic.json に移行しました。このファイルは削除してください。",
+  "_deprecated": true,
+  "_see": "config/tenants/attranic.json"
+}

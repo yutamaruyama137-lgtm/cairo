@@ -1,0 +1,106 @@
+{
+  "_comment": "架空のデモ企業「Attranic Inc.」のテナント設定サンプル。開発・動作確認用。Phase 2でSupabaseに移行する。",
+
+  "tenantId": "attranic",
+  "name": "Attranic Inc.",
+  "subdomain": "attranic",
+  "primaryColor": "#4F46E5",
+  "logoUrl": null,
+
+  "features": [
+    "chat",
+    "menus",
+    "html_preview",
+    "document_gen"
+  ],
+
+  "agents": {
+    "jin": {
+      "enabled": true,
+      "customNameOverride": "Alex（営業）",
+      "systemPromptSuffix": "Attranic Inc. はSaaS系スタートアップ向けの法人向け営業が得意な会社です。B2B提案を専門とします。"
+    },
+    "ai":  {
+      "enabled": true,
+      "customNameOverride": "Morgan（経理）",
+      "systemPromptSuffix": ""
+    },
+    "rin": {
+      "enabled": true,
+      "customNameOverride": null,
+      "systemPromptSuffix": ""
+    },
+    "vi":  {
+      "enabled": true,
+      "customNameOverride": null,
+      "systemPromptSuffix": ""
+    },
+    "iori": {
+      "enabled": true,
+      "customNameOverride": "Jordan（マーケ）",
+      "systemPromptSuffix": ""
+    },
+    "saki": {
+      "enabled": true,
+      "customNameOverride": null,
+      "systemPromptSuffix": ""
+    }
+  },
+
+  "customSystemPromptSuffix": "あなたはAttranic Inc.（架空のBtoB SaaSスタートアップ）のスタッフをサポートするAI社員です。スピード感・データドリブン・英日バイリンガル対応を意識してください。",
+
+  "knowledgeBaseId": null,
+
+  "workflows": [
+    {
+      "workflowId": "expense-approval",
+      "name": "経費精算フロー",
+      "triggerKeywords": ["経費", "精算", "領収書", "expense"],
+      "steps": [
+        {
+          "step": 1,
+          "agent": "saki",
+          "action": "経費の種類・金額・目的を確認し、Attranic社内ルールに基づいて精算フローを案内する",
+          "nextIf": {
+            "amount >= 30000": "manager-approval",
+            "default": "journal"
+          }
+        },
+        {
+          "step": 2,
+          "id": "manager-approval",
+          "agent": "jin",
+          "action": "3万円以上の経費について、上長への承認依頼メール文を作成する",
+          "next": "journal"
+        },
+        {
+          "step": 3,
+          "id": "journal",
+          "agent": "ai",
+          "action": "仕訳データと精算書を作成する（Attranic標準フォーマット）"
+        }
+      ]
+    },
+    {
+      "workflowId": "proposal-creation",
+      "name": "提案書作成フロー",
+      "triggerKeywords": ["提案書", "プレゼン", "proposal"],
+      "steps": [
+        {
+          "step": 1,
+          "agent": "iori",
+          "action": "クライアントの業界・課題を分析し、訴求ポイントと事例をリストアップする",
+          "parallel": false
+        },
+        {
+          "step": 2,
+          "agent": "jin",
+          "action": "イオリの調査結果をもとに、5章構成の提案書本文を作成する"
+        }
+      ]
+    }
+  ],
+
+  "plan": "standard",
+  "monthlyExecutionLimit": 500
+}
