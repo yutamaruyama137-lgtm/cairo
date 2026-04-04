@@ -39,7 +39,8 @@ export default function OnboardingPage() {
 
       // セッションを強制更新（JWTにtenantIdを反映させる）してからリダイレクト
       await update();
-      router.replace("/");
+      // ハードリダイレクトでミドルウェアのキャッシュをクリア
+      window.location.href = "/";
     } catch {
       setError("通信エラーが発生しました");
     } finally {
