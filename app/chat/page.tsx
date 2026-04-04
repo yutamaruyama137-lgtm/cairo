@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import { characters, getCharacter } from "@/data/characters";
-import { getMenusByCharacter, getMenu } from "@/data/menus";
+import { getMenu } from "@/data/menus";
 
 interface ChatMessage {
   id: string;
@@ -59,6 +59,7 @@ function ChatContent() {
   const [storageLoaded, setStorageLoaded] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadToast, setUploadToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [dbMenus, setDbMenus] = useState<{ id: string; title: string; icon: string }[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -85,6 +86,15 @@ function ChatContent() {
     } catch {}
     setStorageLoaded(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── DBからキャラクターのメニューを取得 ─────────────────────────────────────
+  useEffect(() => {
+    if (!storageLoaded) return;
+    fetch(`/api/menus?characterId=${activeCharId}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data?.menus) setDbMenus(data.menus); })
+      .catch(() => {});
+  }, [activeCharId, storageLoaded]);
 
   // ── Persist conversations ─────────────────────────────────────────────────
   useEffect(() => {
@@ -124,9 +134,7 @@ function ChatContent() {
   const messages = activeConversation?.messages ?? [];
   const activeCharId = activeConversation?.characterId ?? selectedCharId;
   const selectedChar = getCharacter(activeCharId) ?? characters[0];
-  const enabledMenus = getMenusByCharacter(activeCharId).filter(
-    (m) => adminConfig[m.id] !== false
-  );
+  const enabledMenus = dbMenus.filter((m) => adminConfig[m.id] !== false);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleNewChat = () => {
