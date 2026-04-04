@@ -5,7 +5,6 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github.css";
 import { useState } from "react";
-import { downloadAsDocx, downloadAsCsv } from "@/lib/export";
 
 interface Props {
   content: string;
@@ -21,8 +20,6 @@ export default function MarkdownRenderer({ content, showActions = false }: Props
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const filename = `output-${new Date().toISOString().slice(0, 10)}`;
-
   return (
     <div className="relative group">
       {showActions && content.length > 10 && (
@@ -32,20 +29,6 @@ export default function MarkdownRenderer({ content, showActions = false }: Props
             className="text-xs bg-white border border-gray-200 text-gray-500 hover:text-gray-700 rounded-lg px-2.5 py-1 shadow-sm transition-colors"
           >
             {copied ? "✓ コピー" : "コピー"}
-          </button>
-          <button
-            onClick={() => downloadAsDocx(content, filename)}
-            className="text-xs bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 rounded-lg px-2.5 py-1 shadow-sm transition-colors font-medium"
-            title="Google Docs / Word で開けます"
-          >
-            📄 Word
-          </button>
-          <button
-            onClick={() => downloadAsCsv(content, filename)}
-            className="text-xs bg-green-50 border border-green-200 text-green-600 hover:bg-green-100 rounded-lg px-2.5 py-1 shadow-sm transition-colors font-medium"
-            title="Excel で開けます"
-          >
-            📊 Excel
           </button>
         </div>
       )}

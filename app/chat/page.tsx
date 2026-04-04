@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
+import ArtifactPanel from "@/components/ArtifactPanel";
 import { characters, getCharacter } from "@/data/characters";
 import { getMenu } from "@/data/menus";
 
@@ -60,6 +61,8 @@ function ChatContent() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadToast, setUploadToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [dbMenus, setDbMenus] = useState<{ id: string; title: string; icon: string; estimated_seconds?: number; human_minutes?: number }[]>([]);
+  const [artifactMsgId, setArtifactMsgId] = useState<string | null>(null);
+  const [artifactOpen, setArtifactOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -139,6 +142,21 @@ function ChatContent() {
     }, 150);
     return () => clearTimeout(timer);
   }, [storageLoaded, initMenuId, dbMenus]);
+
+  // ── ドキュメント検出 ────────────────────────────────────────────────────────
+  function isDocument(content: string): boolean {
+    return content.length > 400 || /^#{1,3} /m.test(content);
+  }
+
+  // ackヘッダーとドキュメント本文を分離
+  function splitContent(content: string): { ack: string; doc: string } {
+    const sep = "\n\n---\n\n";
+    const idx = content.indexOf(sep);
+    if (idx !== -1) {
+      return { ack: content.slice(0, idx), doc: content.slice(idx + sep.length) };
+    }
+    return { ack: "", doc: content };
+  }
 
   // ── Derived state ──────────────────────────────────────────────────────────
   const activeConversation = conversations.find((c) => c.id === activeConvId) ?? null;
@@ -279,8 +297,12 @@ function ChatContent() {
           };
         })
       );
-      // 承認メッセージがあれば最初からスピナーを消す
-      if (ack) setIsLoading(false);
+      // 承認メッセージがあればパネルを開いてスピナーを消す
+      if (ack) {
+        setArtifactMsgId(aiMsgId);
+        setArtifactOpen(true);
+        setIsLoading(false);
+      }
 
       // チャンクごとにリアルタイム表示
       let firstChunk = true;
@@ -416,7 +438,9 @@ function ChatContent() {
       </aside>
 
       {/* ── Main area ── */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="flex-1 flex min-w-0 overflow-hidden">
+        {/* Chat column */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Character tabs */}
         <div className="bg-white border-b border-gray-200 flex flex-shrink-0 overflow-x-auto">
           {characters.map((char) => {
@@ -497,37 +521,62 @@ function ChatContent() {
           )}
 
           {/* Messages */}
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex gap-3 items-end ${msg.role === "user" ? "flex-row-reverse" : ""}`}
-            >
-              {msg.role === "assistant" && (
-                <div className="flex-shrink-0 mb-1">
-                  <Image
-                    src={`/avatars/${activeCharId}.svg`}
-                    alt="AI"
-                    width={34}
-                    height={34}
-                    className="rounded-full shadow-sm"
-                  />
+          {messages.map((msg) => {
+            const isThisStreaming = isLoading && msg.id === messages[messages.length - 1]?.id;
+            if (msg.role === "assistant") {
+              const { ack, doc } = splitContent(msg.content);
+              const isDoc = isDocument(doc);
+
+              return (
+                <div key={msg.id} className="flex gap-3 items-end">
+                  <div className="flex-shrink-0 mb-1">
+                    <Image src={`/avatars/${activeCharId}.svg`} alt="AI" width={34} height={34} className="rounded-full shadow-sm" />
+                  </div>
+                  <div className="flex flex-col gap-2 max-w-lg lg:max-w-xl">
+                    {/* ackテキスト（かしこまりました部分） */}
+                    {ack && (
+                      <div className="bg-white rounded-2xl rounded-bl-sm shadow-sm border border-gray-100 px-4 py-3 text-sm">
+                        <MarkdownRenderer content={ack} showActions={false} />
+                      </div>
+                    )}
+                    {/* ドキュメントカード or 通常テキスト */}
+                    {isDoc ? (
+                      <button
+                        onClick={() => { setArtifactMsgId(msg.id); setArtifactOpen(true); }}
+                        className="flex items-center gap-3 bg-white border-2 border-blue-100 hover:border-blue-300 rounded-2xl rounded-bl-sm px-4 py-3 text-left shadow-sm transition-all group"
+                      >
+                        <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0 text-lg group-hover:bg-blue-100 transition-colors">
+                          📄
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-gray-800 truncate">
+                            {doc.match(/^#{1,3} (.+)/m)?.[1] ?? "ドキュメント"}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {isThisStreaming ? "生成中..." : `${doc.length}文字 · クリックで開く`}
+                          </p>
+                        </div>
+                        <span className="text-blue-400 text-sm flex-shrink-0 group-hover:translate-x-0.5 transition-transform">→</span>
+                      </button>
+                    ) : (
+                      !ack && (
+                        <div className="bg-white rounded-2xl rounded-bl-sm shadow-sm border border-gray-100 px-4 py-3 text-sm">
+                          <MarkdownRenderer content={msg.content} showActions={true} />
+                        </div>
+                      )
+                    )}
+                  </div>
                 </div>
-              )}
-              <div
-                className={`rounded-2xl px-4 py-3 text-sm max-w-lg lg:max-w-2xl ${
-                  msg.role === "user"
-                    ? "bg-blue-500 text-white rounded-br-sm shadow-sm"
-                    : "bg-white rounded-bl-sm shadow-sm border border-gray-100"
-                }`}
-              >
-                {msg.role === "assistant" ? (
-                  <MarkdownRenderer content={msg.content} showActions={true} />
-                ) : (
+              );
+            }
+            return (
+              <div key={msg.id} className="flex gap-3 items-end flex-row-reverse">
+                <div className="rounded-2xl px-4 py-3 text-sm max-w-lg lg:max-w-2xl bg-blue-500 text-white rounded-br-sm shadow-sm">
                   <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* Thinking spinner (くるくる) */}
           {isLoading && (
@@ -633,6 +682,31 @@ function ChatContent() {
               </svg>
             </button>
           </div>
+        </div>
+        </div>{/* end chat column */}
+
+        {/* ── Artifact panel ── */}
+        <div
+          style={{
+            width: artifactOpen ? "480px" : "0",
+            transition: "width 0.22s ease",
+            overflow: "hidden",
+            flexShrink: 0,
+          }}
+        >
+          {artifactOpen && (() => {
+            const artifactMsg = messages.find((m) => m.id === artifactMsgId);
+            const rawContent = artifactMsg?.content ?? "";
+            const { doc } = splitContent(rawContent);
+            const streamingThis = isLoading && artifactMsg?.id === messages[messages.length - 1]?.id;
+            return (
+              <ArtifactPanel
+                content={doc}
+                isStreaming={streamingThis}
+                onClose={() => setArtifactOpen(false)}
+              />
+            );
+          })()}
         </div>
       </main>
     </div>
