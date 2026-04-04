@@ -1,13 +1,15 @@
+export const maxDuration = 60;
+
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getServerSession } from "next-auth";
 import { authOptions, DEFAULT_TENANT_ID } from "@/lib/auth";
 import { getUserByEmail } from "@/lib/db/users";
+import { buildLayeredSystemPrompt } from "@/lib/prompts";
 import { supabaseAdmin } from "@/lib/supabase";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getTenantAgentConfigs } from "@/lib/db/admin";
 import { getCharacter } from "@/data/characters";
-import { getMenu } from "@/data/menus";
 
 const client = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -31,12 +33,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Character not found" }, { status: 404 });
     }
 
-    const skill = skillId ? getMenu(skillId) : undefined;
-
     // テナントのエージェント設定（カスタムプロンプト・出力フォーマット）を取得
     const agentConfigs = await getTenantAgentConfigs(DEFAULT_TENANT_ID);
     const agentConfig = agentConfigs.find((c) => c.agent_id === characterId);
-    const systemPrompt = buildSystemPrompt(character, skill, agentConfig?.custom_system_prompt ?? null, agentConfig?.output_format ?? "markdown");
+
+    // 3層構造でシステムプロンプトを構築
+    // Layer 1: キャラクタープロンプト（/prompts/characters/）
+    // Layer 2: スキルプロンプト（/prompts/skills/）← skillId があるときのみ
+    // Layer 3: テナント固有カスタム（Supabase custom_system_prompt）
+    const systemPrompt = buildLayeredSystemPrompt({
+      characterId,
+      menuId: skillId,
+      tenantSuffix: agentConfig?.custom_system_prompt ?? null,
+      outputFormat: agentConfig?.output_format ?? "markdown",
+    });
 
     // 月間実行回数チェック
     const rateLimit = await checkRateLimit(DEFAULT_TENANT_ID);
@@ -124,48 +134,5 @@ export async function POST(request: NextRequest) {
   }
 }
 
-type CharacterType = ReturnType<typeof getCharacter>;
-type SkillType = ReturnType<typeof getMenu>;
-
-const FORMAT_INSTRUCTIONS: Record<string, string> = {
-  markdown: "Markdownで見やすく整形して出力してください。",
-  bullet:   "箇条書き（- または ・）で整理して出力してください。",
-  table:    "できるかぎり表形式（Markdownテーブル）で出力してください。",
-  plain:    "プレーンテキストで、装飾なしで出力してください。",
-};
-
-function buildSystemPrompt(
-  character: CharacterType,
-  skill?: SkillType,
-  customPrompt?: string | null,
-  outputFormat?: string
-): string {
-  if (!character) return "";
-
-  const formatInstruction = FORMAT_INSTRUCTIONS[outputFormat ?? "markdown"];
-
-  let prompt = `あなたは「${character.name}」です。${character.department}の${character.role}として、ユーザーの仕事をサポートするAI社員です。
-
-【プロフィール】
-- 名前: ${character.name}
-- 所属: ${character.department}
-- 役割: ${character.role}
-- 専門: ${character.description}
-
-【行動指針】
-- 常に日本語で応答してください
-- フレンドリーで親切な口調を保ちつつ、専門的な回答をしてください
-- 回答は具体的で実用的にしてください
-- ${formatInstruction}
-- 長い出力が必要な場合は、ステップを分けてわかりやすく説明してください`;
-
-  if (customPrompt) {
-    prompt += `\n\n【この会社固有の指示】\n${customPrompt}`;
-  }
-
-  if (skill) {
-    prompt += `\n\n【現在のタスクモード: ${skill.title}】\n${skill.description}\nこのモードでは特に「${skill.title}」に特化した高品質な出力を心がけてください。`;
-  }
-
-  return prompt;
-}
+// buildSystemPrompt は buildLayeredSystemPrompt（lib/prompts.ts）に移行しました。
+// 3層構造: キャラクタープロンプト + スキルプロンプト + テナント固有カスタム

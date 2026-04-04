@@ -1,3 +1,5 @@
+export const maxDuration = 60;
+
 /**
  * app/api/export/docx/route.ts
  *

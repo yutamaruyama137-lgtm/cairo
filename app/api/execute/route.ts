@@ -1,3 +1,5 @@
+export const maxDuration = 60;
+
 import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions, DEFAULT_TENANT_ID } from "@/lib/auth";
@@ -8,6 +10,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getUserByEmail } from "@/lib/db/users";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getTenantMenu, rowToMenuItem } from "@/lib/db/menus";
+import { buildLayeredSystemPrompt } from "@/lib/prompts";
 import { searchKnowledgeVector, searchKnowledgeText } from "@/lib/db/knowledge";
 import { generateEmbedding } from "@/lib/embeddings";
 import { ExecuteRequest } from "@/types";
@@ -94,29 +97,26 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // テナント固有のトンマナ（system_prompt_suffix）を取得
+    // Layer 3: テナント固有のカスタム指示をSupabaseから取得
     const { data: agentConfig } = await supabaseAdmin
       .from("tenant_agents")
       .select("system_prompt_suffix")
       .eq("tenant_id", tenantId)
       .eq("agent_id", menu.characterId)
       .single();
-    const tonmana = agentConfig?.system_prompt_suffix ?? "";
+    const tenantSuffix = agentConfig?.system_prompt_suffix ?? null;
 
-    // システムプロンプト（オーバーライドがあればそれを使う、なければデフォルト）
+    // システムプロンプト構築:
+    // - DBにオーバーライドがある場合はそれを使用（テナント完全カスタム）
+    // - それ以外は3層構造（キャラクター + スキル + テナント固有）で構築
     const systemPrompt = dbMenuRow?.system_prompt_override
-      ? dbMenuRow.system_prompt_override + (tonmana ? `\n\n${tonmana}` : "")
-      : `あなたはAI社員「${character.name}」です。${character.department}の担当です。
-役割：${character.role}
-
-【行動指針】
-- 入力された情報をもとに、すぐに使える品質の成果物を出力する
-- 曖昧な表現を避け、具体的に記述する
-- 日本のビジネス慣習を理解した内容にする
-- マークダウン形式で、見やすく整理して出力する
-- 「〜かもしれません」より「〜です」と断言する
-${tonmana ? `\n${tonmana}` : ""}
-${character.greeting}`;
+      ? dbMenuRow.system_prompt_override + (tenantSuffix ? `\n\n---\n\n## この会社固有の追加指示\n\n${tenantSuffix}` : "")
+      : buildLayeredSystemPrompt({
+          characterId: menu.characterId,
+          menuId,
+          tenantSuffix,
+          outputFormat: "markdown",
+        });
 
     const startedAt = Date.now();
     const outputChunks: string[] = [];
