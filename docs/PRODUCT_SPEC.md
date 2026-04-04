@@ -11,7 +11,7 @@
 | 項目 | 内容 |
 |---|---|
 | **サービス名** | CAIRO |
-| **本番URL** | https://cairo.vercel.app/ |
+| **本番URL** | https://cairo-zybd.vercel.app/ |
 | **一言説明** | 仕事メニューから選ぶだけ。あなたの会社に、今日からAI社員を。 |
 | **技術** | Next.js 14 + Claude API（claude-sonnet-4-6）+ Vercel |
 | **ターゲット** | AIを使ったことがない中小企業・商店街 |

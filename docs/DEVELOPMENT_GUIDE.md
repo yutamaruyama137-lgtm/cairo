@@ -149,7 +149,7 @@ git checkout main
 git merge develop
 git push origin main
 # → Vercel が自動でビルド・デプロイ
-# → https://cairo.vercel.app/ で反映確認
+# → https://cairo-zybd.vercel.app/ で反映確認
 ```
 
 ### Vercel の確認

@@ -1,7 +1,7 @@
 # CAIRO — Claude Code 開発ガイド
 
-**最終更新:** 2026-04-01
-**本番URL:** https://cairo.vercel.app/
+**最終更新:** 2026-04-04
+**本番URL:** https://cairo-zybd.vercel.app/
 **リポジトリ:** https://github.com/yutamaruyama137-lgtm/cairo
 
 ---
@@ -188,8 +188,8 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 NEXTAUTH_SECRET=your-secret-here
-NEXTAUTH_URL=https://cairo.vercel.app
-NEXT_PUBLIC_APP_URL=https://cairo.vercel.app
+NEXTAUTH_URL=https://cairo-zybd.vercel.app
+NEXT_PUBLIC_APP_URL=https://cairo-zybd.vercel.app
 GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=xxx
 

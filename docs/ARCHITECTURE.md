@@ -1,7 +1,7 @@
 # CAIRO — 技術アーキテクチャ設計書
 
 **最終更新:** 2026-04-01
-**本番URL:** https://cairo.vercel.app/
+**本番URL:** https://cairo-zybd.vercel.app/
 **リポジトリ:** https://github.com/yutamaruyama137-lgtm/cairo
 
 ---
@@ -350,8 +350,8 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
 # Phase 2（NextAuth.js 認証）
 NEXTAUTH_SECRET=your-secret-here
-NEXTAUTH_URL=https://cairo.vercel.app
-NEXT_PUBLIC_APP_URL=https://cairo.vercel.app
+NEXTAUTH_URL=https://cairo-zybd.vercel.app
+NEXT_PUBLIC_APP_URL=https://cairo-zybd.vercel.app
 GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=xxx
 

@@ -2,7 +2,7 @@
 
 > 仕事メニューから選ぶだけ。あなたの会社に、今日からAI社員を。
 
-**本番URL:** https://cairo.vercel.app/
+**本番URL:** https://cairo-zybd.vercel.app/
 **リポジトリ:** https://github.com/yutamaruyama137-lgtm/cairo
 **開発元:** [REQS Lab](https://reqs-lab.com)
 
