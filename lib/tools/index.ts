@@ -7,6 +7,8 @@
 
 import type { ToolDefinition } from "@/lib/agents/base";
 import { supabaseAdmin } from "@/lib/supabase";
+import { generateEmbedding } from "@/lib/embeddings";
+import { searchKnowledgeVector, searchKnowledgeText } from "@/lib/db/knowledge";
 
 // ========================================
 // ツール定義
@@ -133,10 +135,29 @@ async function executeSearchKnowledge(
   _category: string,
   tenantId: string
 ): Promise<string> {
-  // Phase 3.4でpgvectorに移行。現在はテキストマッチで代替。
-  // SQLインジェクション対策: クエリ長を制限し、Supabaseのパラメータバインディングに任せる
+  // 1. ナレッジベース（knowledge_chunks）をベクトル検索 or テキスト検索
+  let knowledgeResults: Array<{ source_name: string; content: string }> = [];
+
+  const embedding = await generateEmbedding(query);
+  if (embedding) {
+    // OPENAI_API_KEY が設定されていればベクトル検索
+    knowledgeResults = await searchKnowledgeVector(tenantId, embedding, 5);
+  }
+
+  if (knowledgeResults.length === 0) {
+    // フォールバック: テキスト検索
+    knowledgeResults = await searchKnowledgeText(tenantId, query, 5);
+  }
+
+  if (knowledgeResults.length > 0) {
+    return knowledgeResults
+      .map((r) => `【${r.source_name}】\n${r.content}`)
+      .join("\n\n---\n\n");
+  }
+
+  // 2. ナレッジベースにヒットがなければ過去の実行履歴を検索（既存の動作を維持）
   const safeQuery = query.slice(0, 200).replace(/[%_\\]/g, (c) => `\\${c}`);
-  const { data } = await supabaseAdmin
+  const { data: executions } = await supabaseAdmin
     .from("menu_executions")
     .select("menu_id, output, created_at")
     .eq("tenant_id", tenantId)
@@ -144,13 +165,13 @@ async function executeSearchKnowledge(
     .order("created_at", { ascending: false })
     .limit(3);
 
-  if (!data || data.length === 0) {
-    return `「${query}」に関連するナレッジは見つかりませんでした。`;
+  if (executions && executions.length > 0) {
+    return executions
+      .map((d: { menu_id: string; output: string | null; created_at: string }) =>
+        `【過去の実行履歴: ${d.menu_id}】\n${d.output?.slice(0, 300) ?? ""}...`
+      )
+      .join("\n\n---\n\n");
   }
 
-  return data
-    .map((d: { menu_id: string; output: string | null; created_at: string }) =>
-      `【${d.menu_id}】${d.output?.slice(0, 200) ?? ""}...`
-    )
-    .join("\n\n");
+  return `「${query}」に関連するナレッジは見つかりませんでした。`;
 }

@@ -27,6 +27,13 @@ export interface MenuInput {
   helpText?: string;
 }
 
+export type MenuCategory =
+  | "文書作成"
+  | "分析・調査"
+  | "コミュニケーション"
+  | "相談・アドバイス"
+  | "事務処理";
+
 export interface MenuItem {
   id: string;
   characterId: string;
@@ -34,6 +41,8 @@ export interface MenuItem {
   description: string;
   icon: string;
   estimatedSeconds: number;
+  humanMinutes: number;      // 人間が同じ作業をした場合の所要時間（分）
+  category: MenuCategory;    // 能力カテゴリ（ダッシュボード集計用）
   inputs: MenuInput[];
   promptTemplate: string;
   outputLabel: string;

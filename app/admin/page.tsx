@@ -7,6 +7,7 @@ import { getTenantAgentConfigs, getTenantDetail } from "@/lib/db/admin";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { characters } from "@/data/characters";
 import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import AdminAgentCard from "./AdminAgentCard";
 
 export default async function AdminPage() {
@@ -27,9 +28,7 @@ export default async function AdminPage() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/chat" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
-              ← チャットに戻る
-            </Link>
+            <BackButton />
             <span className="text-gray-300">/</span>
             <span className="font-black text-gray-800">管理パネル</span>
           </div>
@@ -62,6 +61,54 @@ export default async function AdminPage() {
               <p className="font-bold text-gray-800">{tenant?.subdomain ?? "-"}</p>
             </div>
           </div>
+        </div>
+
+        {/* ダッシュボードへのリンク */}
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-6 flex items-center justify-between text-white">
+          <div>
+            <h2 className="font-black text-lg">削減時間ダッシュボード</h2>
+            <p className="text-sm opacity-80 mt-1">
+              AI社員が何時間分の業務を代替したか・どの能力が使われているかを可視化
+            </p>
+          </div>
+          <Link
+            href="/admin/dashboard"
+            className="bg-white text-blue-600 text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-blue-50 transition-colors whitespace-nowrap"
+          >
+            見る →
+          </Link>
+        </div>
+
+        {/* メンバー管理 */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex items-center justify-between">
+          <div>
+            <h2 className="font-black text-gray-800 text-lg">メンバー管理</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              メンバーの追加・削除・招待ができます
+            </p>
+          </div>
+          <Link
+            href="/admin/members"
+            className="bg-gray-900 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-gray-700 transition-colors whitespace-nowrap"
+          >
+            管理する →
+          </Link>
+        </div>
+
+        {/* ナレッジベースへのリンク */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex items-center justify-between">
+          <div>
+            <h2 className="font-black text-gray-800 text-lg">ナレッジベース</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              社内ドキュメントをアップロードしてAI社員に会社の知識を学習させます
+            </p>
+          </div>
+          <Link
+            href="/knowledge"
+            className="bg-gray-900 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-gray-700 transition-colors whitespace-nowrap"
+          >
+            管理する →
+          </Link>
         </div>
 
         {/* AI社員設定 */}

@@ -9,6 +9,8 @@ export const menus: MenuItem[] = [
     description: "会議の内容を整理して、きれいな議事録を作成します",
     icon: "📝",
     estimatedSeconds: 30,
+    humanMinutes: 45,
+    category: "文書作成",
     inputs: [
       { key: "date", label: "会議の日付", type: "text", placeholder: "例：2026年3月27日", required: true },
       { key: "attendees", label: "参加者", type: "text", placeholder: "例：田中、鈴木、山田", required: true },
@@ -37,6 +39,8 @@ export const menus: MenuItem[] = [
     description: "お客様への提案書を自動で作成します",
     icon: "📋",
     estimatedSeconds: 45,
+    humanMinutes: 120,
+    category: "文書作成",
     inputs: [
       { key: "company", label: "お客様の会社名", type: "text", placeholder: "例：株式会社〇〇", required: true },
       { key: "problem", label: "お客様のお悩み・課題", type: "textarea", placeholder: "例：人手不足で業務が回らない、売上が伸び悩んでいる", required: true },
@@ -67,6 +71,8 @@ export const menus: MenuItem[] = [
     description: "お客様への営業メールを作成します",
     icon: "✉️",
     estimatedSeconds: 20,
+    humanMinutes: 20,
+    category: "コミュニケーション",
     inputs: [
       { key: "recipient", label: "送り先のお名前・会社名", type: "text", placeholder: "例：株式会社〇〇 田中様", required: true },
       { key: "purpose", label: "メールの目的", type: "select", placeholder: "", required: true, options: ["初回ご挨拶", "提案のご案内", "お礼・フォローアップ", "アポイントのお願い", "資料送付のご案内"] },
@@ -88,6 +94,8 @@ export const menus: MenuItem[] = [
     description: "訪問予定の会社について調査レポートを作成します",
     icon: "🔍",
     estimatedSeconds: 40,
+    humanMinutes: 60,
+    category: "分析・調査",
     inputs: [
       { key: "company", label: "調べたい会社名", type: "text", placeholder: "例：株式会社〇〇", required: true },
       { key: "industry", label: "業種", type: "text", placeholder: "例：飲食業、製造業、小売業", required: true },
@@ -118,6 +126,8 @@ export const menus: MenuItem[] = [
     description: "領収書・請求書の内容を整理して仕訳を作成します",
     icon: "🧾",
     estimatedSeconds: 25,
+    humanMinutes: 30,
+    category: "事務処理",
     inputs: [
       { key: "content", label: "証憑の内容", type: "textarea", placeholder: "例：〇〇株式会社 請求書 2026年3月分 ソフトウェアライセンス料 50,000円", required: true, helpText: "証憑に書いてある内容をそのまま入力してください" },
       { key: "date", label: "日付", type: "text", placeholder: "例：2026年3月27日", required: true },
@@ -142,6 +152,8 @@ export const menus: MenuItem[] = [
     description: "今後の資金繰り予測レポートを作成します",
     icon: "💰",
     estimatedSeconds: 40,
+    humanMinutes: 90,
+    category: "分析・調査",
     inputs: [
       { key: "current_balance", label: "現在の預金残高", type: "text", placeholder: "例：500万円", required: true },
       { key: "monthly_income", label: "月の収入予定", type: "textarea", placeholder: "例：売上入金 200万円（3月末）、補助金 50万円（4月初旬）", required: true },
@@ -170,6 +182,8 @@ export const menus: MenuItem[] = [
     description: "取引内容を入力するだけで仕訳を作成します",
     icon: "📒",
     estimatedSeconds: 20,
+    humanMinutes: 20,
+    category: "事務処理",
     inputs: [
       { key: "transaction", label: "取引の内容", type: "textarea", placeholder: "例：事務所の家賃30万円を銀行振込で支払った", required: true },
       { key: "amount", label: "金額", type: "text", placeholder: "例：300,000円", required: true },
@@ -196,6 +210,8 @@ export const menus: MenuItem[] = [
     description: "経費や売上データの異常値を検出・分析します",
     icon: "⚠️",
     estimatedSeconds: 30,
+    humanMinutes: 45,
+    category: "分析・調査",
     inputs: [
       { key: "data", label: "チェックしたいデータ", type: "textarea", placeholder: "例：1月売上100万、2月売上95万、3月売上200万、4月売上98万", required: true },
       { key: "category", label: "データの種類", type: "select", placeholder: "", required: true, options: ["売上", "経費", "利益", "在庫", "その他"] },
@@ -223,6 +239,8 @@ export const menus: MenuItem[] = [
     description: "契約書の草案を自動作成します",
     icon: "📄",
     estimatedSeconds: 50,
+    humanMinutes: 180,
+    category: "文書作成",
     inputs: [
       { key: "contract_type", label: "契約の種類", type: "select", placeholder: "", required: true, options: ["業務委託契約", "秘密保持契約（NDA）", "売買契約", "賃貸借契約", "雇用契約", "その他"] },
       { key: "party_a", label: "甲（依頼側）の名前・会社名", type: "text", placeholder: "例：株式会社〇〇", required: true },
@@ -246,6 +264,8 @@ export const menus: MenuItem[] = [
     description: "契約書や文書のリスクを確認します",
     icon: "🛡️",
     estimatedSeconds: 40,
+    humanMinutes: 60,
+    category: "分析・調査",
     inputs: [
       { key: "document", label: "チェックしたい文書の内容", type: "textarea", placeholder: "契約書や文書の内容をここに貼り付けてください", required: true },
       { key: "concern", label: "特に心配なこと", type: "textarea", placeholder: "例：解約条件が不明確、損害賠償の範囲が心配", required: false },
@@ -273,6 +293,8 @@ export const menus: MenuItem[] = [
     description: "法的な疑問・悩みに回答します",
     icon: "💬",
     estimatedSeconds: 35,
+    humanMinutes: 60,
+    category: "相談・アドバイス",
     inputs: [
       { key: "question", label: "相談したい内容", type: "textarea", placeholder: "例：アルバイトを急に解雇したい場合、どんな手続きが必要ですか？", required: true },
       { key: "situation", label: "状況の詳細", type: "textarea", placeholder: "詳しい状況があれば教えてください", required: false },
@@ -298,6 +320,8 @@ export const menus: MenuItem[] = [
     description: "関連する法令の改正・変更点を確認します",
     icon: "📰",
     estimatedSeconds: 30,
+    humanMinutes: 60,
+    category: "相談・アドバイス",
     inputs: [
       { key: "law_area", label: "確認したい法令の分野", type: "select", placeholder: "", required: true, options: ["労働法・雇用関係", "税法・会計", "個人情報保護法", "消費者契約法", "会社法", "IT・情報セキュリティ関連", "その他"] },
       { key: "business", label: "事業の内容", type: "text", placeholder: "例：飲食店経営、EC通販、人材派遣", required: true },
@@ -324,6 +348,8 @@ export const menus: MenuItem[] = [
     description: "Webサイトのデザイン案・構成を提案します",
     icon: "🎨",
     estimatedSeconds: 35,
+    humanMinutes: 120,
+    category: "相談・アドバイス",
     inputs: [
       { key: "business_type", label: "お店・事業の種類", type: "text", placeholder: "例：美容院、カフェ、税理士事務所", required: true },
       { key: "target", label: "ターゲットのお客様", type: "text", placeholder: "例：30〜50代の主婦、20代の若者", required: true },
@@ -354,6 +380,8 @@ export const menus: MenuItem[] = [
     description: "Webサイト制作に必要なことを整理します",
     icon: "🌐",
     estimatedSeconds: 30,
+    humanMinutes: 60,
+    category: "相談・アドバイス",
     inputs: [
       { key: "purpose", label: "Webサイトを作る目的", type: "textarea", placeholder: "例：お店の紹介ページが欲しい、ネット予約できるようにしたい", required: true },
       { key: "budget", label: "おおよその予算", type: "select", placeholder: "", required: true, options: ["〜10万円", "10〜30万円", "30〜100万円", "100万円以上", "まだ決めていない"] },
@@ -382,6 +410,8 @@ export const menus: MenuItem[] = [
     description: "アプリのアイデアを整理して開発方針を提案します",
     icon: "📱",
     estimatedSeconds: 40,
+    humanMinutes: 90,
+    category: "相談・アドバイス",
     inputs: [
       { key: "idea", label: "作りたいアプリのアイデア", type: "textarea", placeholder: "例：スタッフのシフト管理アプリ、お客様向けポイントカードアプリ", required: true },
       { key: "users", label: "使う人（ユーザー）", type: "text", placeholder: "例：スタッフ10名、お客様100名", required: true },
@@ -410,6 +440,8 @@ export const menus: MenuItem[] = [
     description: "ITツール・デジタル化について相談できます",
     icon: "💡",
     estimatedSeconds: 25,
+    humanMinutes: 45,
+    category: "相談・アドバイス",
     inputs: [
       { key: "problem", label: "困っていること・相談したいこと", type: "textarea", placeholder: "例：紙の管理をデジタル化したい、セキュリティが心配、どのソフトを使えばいい？", required: true },
       { key: "current", label: "現在使っているIT環境", type: "text", placeholder: "例：Excelとメールのみ、特になし", required: false },
@@ -438,6 +470,8 @@ export const menus: MenuItem[] = [
     description: "集客・販促・企画のアイデアをたくさん出します",
     icon: "💡",
     estimatedSeconds: 25,
+    humanMinutes: 60,
+    category: "相談・アドバイス",
     inputs: [
       { key: "business", label: "お店・事業の内容", type: "text", placeholder: "例：地域の和食レストラン", required: true },
       { key: "goal", label: "達成したいこと", type: "textarea", placeholder: "例：新規のお客様を増やしたい、リピート率を上げたい", required: true },
@@ -464,6 +498,8 @@ export const menus: MenuItem[] = [
     description: "チラシ・ポスター・DM の文章を作成します",
     icon: "📰",
     estimatedSeconds: 30,
+    humanMinutes: 45,
+    category: "コミュニケーション",
     inputs: [
       { key: "purpose", label: "チラシの目的", type: "text", placeholder: "例：新メニューのお知らせ、セールの告知", required: true },
       { key: "target", label: "配る相手", type: "text", placeholder: "例：近所の方、40〜60代の女性", required: true },
@@ -493,6 +529,8 @@ export const menus: MenuItem[] = [
     description: "バナー・画像の制作指示書を作成します",
     icon: "🖼️",
     estimatedSeconds: 20,
+    humanMinutes: 30,
+    category: "コミュニケーション",
     inputs: [
       { key: "purpose", label: "バナーの使い道", type: "select", placeholder: "", required: true, options: ["WebサイトのTOPバナー", "SNS投稿用画像", "広告バナー", "ヘッダー画像", "サムネイル"] },
       { key: "message", label: "バナーで伝えたいこと", type: "text", placeholder: "例：春の新メニュー登場！", required: true },
@@ -522,6 +560,8 @@ export const menus: MenuItem[] = [
     description: "Instagram・X・Facebookの投稿文を作成します",
     icon: "📱",
     estimatedSeconds: 20,
+    humanMinutes: 30,
+    category: "コミュニケーション",
     inputs: [
       { key: "platform", label: "投稿するSNS", type: "select", placeholder: "", required: true, options: ["Instagram", "X（Twitter）", "Facebook", "LINE公式アカウント"] },
       { key: "topic", label: "投稿したい内容・トピック", type: "textarea", placeholder: "例：新商品が入荷した、スタッフを紹介したい、お知らせがある", required: true },
@@ -549,6 +589,8 @@ export const menus: MenuItem[] = [
     description: "就業規則・社内規程について回答します",
     icon: "📚",
     estimatedSeconds: 25,
+    humanMinutes: 20,
+    category: "事務処理",
     inputs: [
       { key: "question", label: "知りたいこと・質問", type: "textarea", placeholder: "例：有給休暇は何日取れますか？残業代の計算方法は？", required: true },
       { key: "situation", label: "どんな状況で知りたいか", type: "textarea", placeholder: "例：来月から育児休暇を取りたい、急に体調不良で休む場合", required: false },
@@ -574,6 +616,8 @@ export const menus: MenuItem[] = [
     description: "経費精算の手続き・書き方を案内します",
     icon: "💳",
     estimatedSeconds: 20,
+    humanMinutes: 15,
+    category: "事務処理",
     inputs: [
       { key: "expense_type", label: "経費の種類", type: "select", placeholder: "", required: true, options: ["交通費", "接待・会食費", "消耗品費", "通信費", "研修・書籍費", "その他"] },
       { key: "amount", label: "金額", type: "text", placeholder: "例：5,400円", required: true },
@@ -601,6 +645,8 @@ export const menus: MenuItem[] = [
     description: "社内メールや掲示物の通知文を作成します",
     icon: "📣",
     estimatedSeconds: 20,
+    humanMinutes: 20,
+    category: "文書作成",
     inputs: [
       { key: "notice_type", label: "通知の種類", type: "select", placeholder: "", required: true, options: ["行事・イベントのお知らせ", "ルール変更のお知らせ", "注意喚起", "募集・案内", "お礼・感謝", "その他"] },
       { key: "content", label: "伝えたい内容", type: "textarea", placeholder: "例：来週月曜日に防災訓練があります。全員参加必須です。", required: true },
@@ -627,6 +673,8 @@ export const menus: MenuItem[] = [
     description: "業務マニュアルをわかりやすく作成します",
     icon: "📖",
     estimatedSeconds: 45,
+    humanMinutes: 120,
+    category: "文書作成",
     inputs: [
       { key: "task", label: "マニュアルにする業務", type: "text", placeholder: "例：レジの締め作業、新入社員の入社手続き", required: true },
       { key: "audience", label: "マニュアルを使う人", type: "text", placeholder: "例：新入社員、パートタイムスタッフ", required: true },

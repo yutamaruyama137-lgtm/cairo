@@ -1,9 +1,26 @@
 import Link from "next/link";
 import Image from "next/image";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { supabaseAdmin } from "@/lib/supabase";
 import { characters } from "@/data/characters";
 import UserMenu from "@/components/UserMenu";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await getServerSession(authOptions);
+  const tenantId = session?.user?.tenantId;
+
+  // テナント名を取得
+  let tenantName: string | null = null;
+  if (tenantId) {
+    const { data } = await supabaseAdmin
+      .from("tenants")
+      .select("name")
+      .eq("id", tenantId)
+      .single();
+    tenantName = data?.name ?? null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ヘッダー */}
@@ -29,7 +46,29 @@ export default function HomePage() {
             </div>
             <span className="font-black text-lg text-gray-800 ml-1">BOT</span>
           </div>
-          <div className="flex items-center gap-3">
+          {/* テナント名バッジ */}
+          {tenantName && (
+            <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-xl">
+              <span className="text-xs text-gray-400">会社</span>
+              <span className="text-sm font-black text-gray-700">{tenantName}</span>
+              {session?.user?.role === "admin" && (
+                <span className="text-xs bg-orange-100 text-orange-600 font-bold px-1.5 py-0.5 rounded-full">管理者</span>
+              )}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Link
+              href="/knowledge"
+              className="text-sm font-bold text-gray-500 hover:text-gray-800 px-3 py-2 rounded-xl hover:bg-gray-100 transition-colors flex items-center gap-1.5"
+            >
+              📚 ナレッジ
+            </Link>
+            <Link
+              href="/admin"
+              className="text-sm font-bold text-gray-500 hover:text-gray-800 px-3 py-2 rounded-xl hover:bg-gray-100 transition-colors flex items-center gap-1.5"
+            >
+              ⚙️ 管理画面
+            </Link>
             <Link
               href="/chat"
               className="bg-blue-500 hover:bg-blue-600 text-white font-bold text-sm px-4 py-2 rounded-xl transition-colors"
@@ -58,6 +97,40 @@ export default function HomePage() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
+          </Link>
+        </div>
+
+        {/* クイックアクセス */}
+        <div className="flex justify-center gap-3 mb-8">
+          <Link
+            href="/knowledge"
+            className="flex items-center gap-2 bg-white border border-gray-200 hover:border-blue-300 hover:bg-blue-50 text-gray-700 hover:text-blue-700 font-bold text-sm px-5 py-3 rounded-2xl transition-all shadow-sm"
+          >
+            📚
+            <div className="text-left">
+              <div className="leading-none">ナレッジベース</div>
+              <div className="text-xs font-normal text-gray-400 mt-0.5">社内文書をAIに学習させる</div>
+            </div>
+          </Link>
+          <Link
+            href="/admin/dashboard"
+            className="flex items-center gap-2 bg-white border border-gray-200 hover:border-purple-300 hover:bg-purple-50 text-gray-700 hover:text-purple-700 font-bold text-sm px-5 py-3 rounded-2xl transition-all shadow-sm"
+          >
+            📊
+            <div className="text-left">
+              <div className="leading-none">削減時間ダッシュボード</div>
+              <div className="text-xs font-normal text-gray-400 mt-0.5">AI社員の活躍を可視化</div>
+            </div>
+          </Link>
+          <Link
+            href="/admin"
+            className="flex items-center gap-2 bg-white border border-gray-200 hover:border-gray-400 hover:bg-gray-50 text-gray-700 font-bold text-sm px-5 py-3 rounded-2xl transition-all shadow-sm"
+          >
+            ⚙️
+            <div className="text-left">
+              <div className="leading-none">管理画面</div>
+              <div className="text-xs font-normal text-gray-400 mt-0.5">AI社員の設定・カスタマイズ</div>
+            </div>
           </Link>
         </div>
 

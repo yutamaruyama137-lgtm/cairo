@@ -4,34 +4,32 @@ import type { NextRequest } from "next/server";
 
 const DEFAULT_TENANT_ID = "00000000-0000-0000-0000-000000000001";
 
-/**
- * ホスト名からサブドメインを抽出する。
- * 例: shibuya.cairo-ai.com → "shibuya"
- * 例: localhost → null（デフォルトテナント使用）
- */
 function extractSubdomain(hostname: string): string | null {
-  // localhost・IPアドレスはデフォルトテナント
-  if (hostname.startsWith("localhost") || /^\d+\.\d+\.\d+\.\d+/.test(hostname)) {
-    return null;
-  }
+  if (hostname.startsWith("localhost") || /^\d+\.\d+\.\d+\.\d+/.test(hostname)) return null;
   const parts = hostname.split(".");
-  // example.com（2セグメント）はデフォルト、sub.example.com（3+）はサブドメイン
   if (parts.length <= 2) return null;
   return parts[0];
 }
 
 export default withAuth(
   async function middleware(req: NextRequest) {
+    const { pathname } = req.nextUrl;
+    const token = (req as NextRequest & { nextauth?: { token?: { tenantId?: string | null; userId?: string } } }).nextauth?.token;
+
+    // テナントなし（未オンボーディング）→ /onboarding へリダイレクト
+    // オンボーディングページ自体はスキップ
+    if (pathname !== "/onboarding" && token?.userId && token?.tenantId === null) {
+      return NextResponse.redirect(new URL("/onboarding", req.url));
+    }
+
+    // テナントID の決定（優先順: サブドメイン > セッション > デフォルト）
     const hostname = req.headers.get("host") ?? "localhost";
     const subdomain = extractSubdomain(hostname);
-
-    // ローカル開発: ?tenant=shibuya でテナント切り替え可能
     const tenantParam = req.nextUrl.searchParams.get("tenant");
     const resolvedSubdomain = tenantParam ?? subdomain;
 
-    let tenantId = DEFAULT_TENANT_ID;
+    let tenantId = (token?.tenantId as string | null) ?? DEFAULT_TENANT_ID;
 
-    // サブドメインがある場合はSupabaseで解決
     if (resolvedSubdomain) {
       try {
         const internalSecret = process.env.INTERNAL_API_SECRET ?? "";
@@ -44,7 +42,7 @@ export default withAuth(
           if (json.tenantId) tenantId = json.tenantId;
         }
       } catch {
-        // 解決失敗時はデフォルトテナント
+        // 解決失敗時はセッションのテナントを使用
       }
     }
 
@@ -59,7 +57,6 @@ export default withAuth(
   }
 );
 
-// login・api/auth・_next・public以外の全ルートを保護する
 export const config = {
   matcher: ["/((?!login|api/auth|api/tenant|_next|public).*)"],
 };

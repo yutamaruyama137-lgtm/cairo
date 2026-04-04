@@ -57,9 +57,12 @@ function ChatContent() {
   const [agenticMode, setAgenticMode] = useState(false);
   const [adminConfig, setAdminConfig] = useState<Record<string, boolean>>({});
   const [storageLoaded, setStorageLoaded] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadToast, setUploadToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const didAutoSend = useRef(false);
   // Always holds the latest sendMessage to avoid stale closures in effects
   const sendMsgRef = useRef<((text: string) => Promise<void>) | null>(null);
@@ -133,6 +136,32 @@ function ChatContent() {
   const handleSelectCharacter = (charId: string) => {
     setSelectedCharId(charId);
     setActiveConvId(null); // Just show the greeting for this character
+  };
+
+  const handleFileUpload = async (file: File) => {
+    setUploadingFile(true);
+    setUploadToast(null);
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/knowledge/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        setUploadToast({ type: "error", message: data.error ?? "アップロード失敗" });
+      } else {
+        setUploadToast({
+          type: "success",
+          message: `「${file.name}」を${data.chunkCount}チャンクでナレッジに追加しました`,
+        });
+      }
+    } catch {
+      setUploadToast({ type: "error", message: "通信エラーが発生しました" });
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      // トーストを4秒後に消す
+      setTimeout(() => setUploadToast(null), 4000);
+    }
   };
 
   const sendMessage = async (text: string) => {
@@ -320,17 +349,21 @@ function ChatContent() {
           )}
         </nav>
 
-        {/* Admin link */}
-        <div className="p-4 border-t border-gray-100">
+        {/* Bottom nav */}
+        <div className="p-3 border-t border-gray-100 space-y-1">
+          <Link
+            href="/knowledge"
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-base">📚</span>
+            ナレッジベース
+          </Link>
           <Link
             href="/admin"
-            className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1.5 transition-colors"
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
-            </svg>
-            管理者設定
+            <span className="text-base">⚙️</span>
+            管理画面
           </Link>
         </div>
       </aside>
@@ -473,7 +506,21 @@ function ChatContent() {
 
         {/* Input bar */}
         <div className="bg-white border-t border-gray-200 p-4">
-          <div className="flex gap-3 items-end max-w-4xl mx-auto">
+          {/* アップロードトースト */}
+          {uploadToast && (
+            <div
+              className={`mb-3 max-w-4xl mx-auto px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 ${
+                uploadToast.type === "success"
+                  ? "bg-green-50 text-green-700 border border-green-200"
+                  : "bg-red-50 text-red-700 border border-red-200"
+              }`}
+            >
+              {uploadToast.type === "success" ? "✅" : "❌"}
+              {uploadToast.message}
+            </div>
+          )}
+
+          <div className="flex gap-2 items-end max-w-4xl mx-auto">
             {/* Agenticモードトグル */}
             <button
               onClick={() => setAgenticMode(!agenticMode)}
@@ -486,6 +533,33 @@ function ChatContent() {
             >
               {agenticMode ? "⚡ Agentic" : "⚡"}
             </button>
+
+            {/* ファイルアップロードボタン */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingFile}
+              title="ナレッジにファイルを追加（.txt / .md / .csv）"
+              className="p-2 rounded-xl transition-colors flex-shrink-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-40"
+            >
+              {uploadingFile ? (
+                <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+                </svg>
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt,.md,.csv"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleFileUpload(file);
+              }}
+            />
+
             <textarea
               ref={textareaRef}
               value={inputText}
