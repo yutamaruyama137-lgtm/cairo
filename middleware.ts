@@ -17,8 +17,13 @@ export default withAuth(
     const token = (req as NextRequest & { nextauth?: { token?: { tenantId?: string | null; userId?: string } } }).nextauth?.token;
 
     // テナントなし（未オンボーディング）→ /onboarding へリダイレクト
-    // オンボーディングページ自体はスキップ
-    if (pathname !== "/onboarding" && token?.userId && token?.tenantId === null) {
+    // APIルートとオンボーディングページ自体はスキップ
+    if (
+      !pathname.startsWith("/api/") &&
+      pathname !== "/onboarding" &&
+      token?.userId &&
+      token?.tenantId === null
+    ) {
       return NextResponse.redirect(new URL("/onboarding", req.url));
     }
 
