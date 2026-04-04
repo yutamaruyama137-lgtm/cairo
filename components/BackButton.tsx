@@ -1,19 +1,19 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface BackButtonProps {
+  href: string;   // 明示的な遷移先（router.back() は使わない）
   label?: string;
 }
 
-export default function BackButton({ label = "← 戻る" }: BackButtonProps) {
-  const router = useRouter();
+export default function BackButton({ href, label = "← 戻る" }: BackButtonProps) {
   return (
-    <button
-      onClick={() => router.back()}
+    <Link
+      href={href}
       className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
     >
       {label}
-    </button>
+    </Link>
   );
 }

@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface KnowledgeSource {
   source_name: string;
@@ -33,7 +33,6 @@ interface UploadResult {
 }
 
 export default function KnowledgePage() {
-  const router = useRouter();
   const [sources, setSources] = useState<KnowledgeSource[]>([]);
   const [vectorSearchEnabled, setVectorSearchEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -150,9 +149,9 @@ export default function KnowledgePage() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.back()} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
-              ← 戻る
-            </button>
+            <Link href="/" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+              ← トップ
+            </Link>
             <span className="text-gray-300">/</span>
             <span className="font-black text-gray-800">ナレッジベース</span>
           </div>
