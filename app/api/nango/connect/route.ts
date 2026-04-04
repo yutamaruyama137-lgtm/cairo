@@ -31,14 +31,17 @@ export async function POST(req: NextRequest) {
 
     const connectionId = `${tenantId}-${userId}`;
 
-    const token = await nango.createConnectSession({
+    // allowed_integrations を指定すると Nango 側に未設定の場合 400 になるため外す
+    // Nango Connect UI 側でプロバイダーを選択させる
+    const sessionParams: Parameters<typeof nango.createConnectSession>[0] = {
       end_user: {
         id: connectionId,
         display_name: session?.user?.name ?? userId,
         email: session?.user?.email ?? undefined,
       },
-      allowed_integrations: [integration],
-    });
+    };
+
+    const token = await nango.createConnectSession(sessionParams);
 
     const tokenValue = typeof token === "string" ? token : (token as { data?: { token?: string }; token?: string })?.data?.token ?? (token as { token?: string })?.token;
 
