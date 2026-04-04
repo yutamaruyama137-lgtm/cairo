@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github.css";
 import { useState } from "react";
+import { downloadAsDocx, downloadAsCsv } from "@/lib/export";
 
 interface Props {
   content: string;
@@ -20,19 +21,11 @@ export default function MarkdownRenderer({ content, showActions = false }: Props
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([content], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `output-${Date.now()}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const filename = `output-${new Date().toISOString().slice(0, 10)}`;
 
   return (
     <div className="relative group">
-      {showActions && (
+      {showActions && content.length > 10 && (
         <div className="absolute top-0 right-0 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
           <button
             onClick={handleCopy}
@@ -41,10 +34,18 @@ export default function MarkdownRenderer({ content, showActions = false }: Props
             {copied ? "✓ コピー" : "コピー"}
           </button>
           <button
-            onClick={handleDownload}
-            className="text-xs bg-white border border-gray-200 text-gray-500 hover:text-gray-700 rounded-lg px-2.5 py-1 shadow-sm transition-colors"
+            onClick={() => downloadAsDocx(content, filename)}
+            className="text-xs bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 rounded-lg px-2.5 py-1 shadow-sm transition-colors font-medium"
+            title="Google Docs / Word で開けます"
           >
-            .md
+            📄 Word
+          </button>
+          <button
+            onClick={() => downloadAsCsv(content, filename)}
+            className="text-xs bg-green-50 border border-green-200 text-green-600 hover:bg-green-100 rounded-lg px-2.5 py-1 shadow-sm transition-colors font-medium"
+            title="Excel で開けます"
+          >
+            📊 Excel
           </button>
         </div>
       )}

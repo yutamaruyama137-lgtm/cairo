@@ -244,27 +244,43 @@ function ChatContent() {
       const decoder = new TextDecoder();
       if (!reader) throw new Error("No reader");
 
-      // Collect all chunks silently (no intermediate display)
-      let accumulated = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        accumulated += decoder.decode(value, { stream: true });
-      }
-
-      // Show full response at once
-      const aiMsg: ChatMessage = {
-        id: genId(),
-        role: "assistant",
-        content: accumulated,
-        timestamp: Date.now(),
-      };
+      // メッセージスロットを先に作成（空）
+      const aiMsgId = genId();
       setConversations((prev) =>
         prev.map((c) => {
           if (c.id !== convId) return c;
-          return { ...c, messages: [...c.messages, aiMsg] };
+          return {
+            ...c,
+            messages: [
+              ...c.messages,
+              { id: aiMsgId, role: "assistant" as const, content: "", timestamp: Date.now() },
+            ],
+          };
         })
       );
+
+      // チャンクごとにリアルタイム表示
+      let firstChunk = true;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        if (firstChunk) {
+          setIsLoading(false); // 最初のテキストが来たらスピナーを消す
+          firstChunk = false;
+        }
+        setConversations((prev) =>
+          prev.map((c) => {
+            if (c.id !== convId) return c;
+            return {
+              ...c,
+              messages: c.messages.map((m) =>
+                m.id === aiMsgId ? { ...m, content: m.content + chunk } : m
+              ),
+            };
+          })
+        );
+      }
     } catch {
       const errMsg: ChatMessage = {
         id: genId(),
