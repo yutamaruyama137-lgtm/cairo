@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { characters } from "@/data/characters";
+import UserMenu from "@/components/UserMenu";
 
 export default function HomePage() {
   return (
@@ -35,9 +36,7 @@ export default function HomePage() {
             >
               💬 チャットで使う
             </Link>
-            <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1.5 rounded-full font-medium hidden sm:inline">
-              AI社員サービス by REQS Lab
-            </span>
+            <UserMenu />
           </div>
         </div>
       </header>

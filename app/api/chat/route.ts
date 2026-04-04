@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { getServerSession } from "next-auth";
+import { authOptions, DEFAULT_TENANT_ID } from "@/lib/auth";
+import { getUserByEmail } from "@/lib/db/users";
+import { supabaseAdmin } from "@/lib/supabase";
 import { getCharacter } from "@/data/characters";
 import { getMenu } from "@/data/menus";
 
@@ -26,8 +30,19 @@ export async function POST(request: NextRequest) {
     }
 
     const skill = skillId ? getMenu(skillId) : undefined;
-
     const systemPrompt = buildSystemPrompt(character, skill);
+
+    // セッションからユーザーIDを取得
+    const session = await getServerSession(authOptions);
+    let userId: string | null = null;
+    if (session?.user?.email) {
+      const dbUser = await getUserByEmail(session.user.email, DEFAULT_TENANT_ID);
+      userId = dbUser?.id ?? null;
+    }
+
+    const startedAt = Date.now();
+    const outputChunks: string[] = [];
+    const lastUserMessage = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -46,21 +61,36 @@ export async function POST(request: NextRequest) {
                 chunk.type === "content_block_delta" &&
                 chunk.delta.type === "text_delta"
               ) {
+                outputChunks.push(chunk.delta.text);
                 controller.enqueue(encoder.encode(chunk.delta.text));
               }
             }
           } else {
             const mock = `${character.name}です！（デモモード）\n\nAPIキーを設定すると実際のAI応答が返ります。\n\`.env.local\` に \`ANTHROPIC_API_KEY\` を設定してください。`;
+            outputChunks.push(mock);
             controller.enqueue(encoder.encode(mock));
           }
         } catch (err) {
-          controller.enqueue(
-            encoder.encode(
-              `エラーが発生しました: ${err instanceof Error ? err.message : "Unknown error"}`
-            )
-          );
+          const errMsg = `エラーが発生しました: ${err instanceof Error ? err.message : "Unknown error"}`;
+          controller.enqueue(encoder.encode(errMsg));
         } finally {
           controller.close();
+
+          // DB保存
+          const { error: dbError } = await supabaseAdmin
+            .from("menu_executions")
+            .insert({
+              tenant_id: DEFAULT_TENANT_ID,
+              user_id: userId,
+              menu_id: skillId ?? `${characterId}-chat`,
+              character_id: characterId,
+              inputs: { message: lastUserMessage },
+              output: outputChunks.join(""),
+              duration_ms: Date.now() - startedAt,
+              status: "completed",
+            });
+          if (dbError) console.error("[chat] DB save error:", dbError);
+          else console.log("[chat] DB save success, userId:", userId);
         }
       },
     });

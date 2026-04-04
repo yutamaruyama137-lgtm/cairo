@@ -1,7 +1,11 @@
 import { NextRequest } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions, DEFAULT_TENANT_ID } from "@/lib/auth";
 import { streamText } from "@/lib/claude";
 import { getMenu } from "@/data/menus";
 import { getCharacter } from "@/data/characters";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getUserByEmail } from "@/lib/db/users";
 import { ExecuteRequest } from "@/types";
 
 export async function POST(req: NextRequest) {
@@ -17,6 +21,16 @@ export async function POST(req: NextRequest) {
     const character = getCharacter(menu.characterId);
     if (!character) {
       return Response.json({ error: "キャラクターが見つかりません" }, { status: 404 });
+    }
+
+    // セッションからユーザーIDを取得
+    const session = await getServerSession(authOptions);
+    console.log("[execute] session email:", session?.user?.email ?? "none");
+    let userId: string | null = null;
+    if (session?.user?.email) {
+      const dbUser = await getUserByEmail(session.user.email, DEFAULT_TENANT_ID);
+      console.log("[execute] dbUser:", dbUser);
+      userId = dbUser?.id ?? null;
     }
 
     // プロンプトテンプレートに入力値を埋め込む
@@ -38,14 +52,38 @@ export async function POST(req: NextRequest) {
 
 ${character.greeting}`;
 
-    // ストリーミングレスポンスを返す
+    const startedAt = Date.now();
+    const outputChunks: string[] = [];
+
+    // ストリーミングレスポンスを返す（出力を収集しながら）
     const stream = new ReadableStream({
       async start(controller) {
         try {
           for await (const chunk of streamText({ systemPrompt, userPrompt })) {
+            outputChunks.push(chunk);
             controller.enqueue(new TextEncoder().encode(chunk));
           }
           controller.close();
+
+          // ストリーム完了後にDBへ保存
+          console.log("[execute] saving to DB, userId:", userId, "menuId:", menuId);
+          const { error: dbError } = await supabaseAdmin
+            .from("menu_executions")
+            .insert({
+              tenant_id: DEFAULT_TENANT_ID,
+              user_id: userId,
+              menu_id: menuId,
+              character_id: menu.characterId,
+              inputs,
+              output: outputChunks.join(""),
+              duration_ms: Date.now() - startedAt,
+              status: "completed",
+            });
+          if (dbError) {
+            console.error("[execute] DB save error:", dbError);
+          } else {
+            console.log("[execute] DB save success");
+          }
         } catch (error) {
           controller.error(error);
         }

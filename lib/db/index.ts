@@ -13,6 +13,12 @@
 // テナント操作
 export * from "./tenants";
 
+// ユーザー操作
+export * from "./users";
+
+// テナント別エージェント操作
+export * from "./tenant-agents";
+
 // メニュー操作（Phase 2で data/menus.ts から移行）
 // export * from "./menus";
 
