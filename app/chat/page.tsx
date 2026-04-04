@@ -87,15 +87,6 @@ function ChatContent() {
     setStorageLoaded(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── DBからキャラクターのメニューを取得 ─────────────────────────────────────
-  useEffect(() => {
-    if (!storageLoaded) return;
-    fetch(`/api/menus?characterId=${activeCharId}`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => { if (data?.menus) setDbMenus(data.menus); })
-      .catch(() => {});
-  }, [activeCharId, storageLoaded]);
-
   // ── Persist conversations ─────────────────────────────────────────────────
   useEffect(() => {
     if (!storageLoaded) return;
@@ -135,6 +126,15 @@ function ChatContent() {
   const activeCharId = activeConversation?.characterId ?? selectedCharId;
   const selectedChar = getCharacter(activeCharId) ?? characters[0];
   const enabledMenus = dbMenus.filter((m) => adminConfig[m.id] !== false);
+
+  // ── DBからキャラクターのメニューを取得 ─────────────────────────────────────
+  useEffect(() => {
+    if (!storageLoaded) return;
+    fetch(`/api/menus?characterId=${activeCharId}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data?.menus) setDbMenus(data.menus); })
+      .catch(() => {});
+  }, [activeCharId, storageLoaded]);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleNewChat = () => {
