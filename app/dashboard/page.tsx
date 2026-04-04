@@ -6,6 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getUserByEmail } from "@/lib/db/users";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 interface Execution {
   id: string;
@@ -34,6 +35,8 @@ export default async function DashboardPage() {
   const dbUser = await getUserByEmail(session.user.email, DEFAULT_TENANT_ID);
 
   let executions: Execution[] = [];
+  const rateLimit = await checkRateLimit(DEFAULT_TENANT_ID);
+
   if (dbUser) {
     const { data } = await supabaseAdmin
       .from("menu_executions")
@@ -71,9 +74,22 @@ export default async function DashboardPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">
-        <div className="mb-6">
-          <h1 className="text-xl font-black text-gray-800">実行履歴</h1>
-          <p className="text-sm text-gray-500 mt-1">{session.user.name} さんの過去の実行記録</p>
+        <div className="mb-6 flex items-start justify-between">
+          <div>
+            <h1 className="text-xl font-black text-gray-800">実行履歴</h1>
+            <p className="text-sm text-gray-500 mt-1">{session.user.name} さんの過去の実行記録</p>
+          </div>
+          {/* 月間利用状況 */}
+          <div className="bg-white rounded-2xl border border-gray-100 px-4 py-3 text-right">
+            <p className="text-xs text-gray-400">今月の実行回数</p>
+            <p className="text-lg font-black text-gray-800">
+              {rateLimit.used}
+              {rateLimit.limit !== null && (
+                <span className="text-sm font-normal text-gray-400"> / {rateLimit.limit}</span>
+              )}
+            </p>
+            <p className="text-xs text-gray-400">{rateLimit.plan} プラン</p>
+          </div>
         </div>
 
         {executions.length === 0 ? (
@@ -94,7 +110,7 @@ export default async function DashboardPage() {
               const dateStr = `${date.getFullYear()}/${String(date.getMonth()+1).padStart(2,"0")}/${String(date.getDate()).padStart(2,"0")} ${String(date.getHours()).padStart(2,"0")}:${String(date.getMinutes()).padStart(2,"0")}`;
 
               return (
-                <div key={exec.id} className="bg-white rounded-2xl border border-gray-100 p-5">
+                <Link key={exec.id} href={`/dashboard/${exec.id}`} className="block bg-white rounded-2xl border border-gray-100 p-5 hover:border-gray-200 hover:shadow-sm transition-all">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-2">
                       {char && (
@@ -116,7 +132,7 @@ export default async function DashboardPage() {
                   {exec.duration_ms && (
                     <p className="text-xs text-gray-300 mt-2">{(exec.duration_ms / 1000).toFixed(1)}秒</p>
                   )}
-                </div>
+                </Link>
               );
             })}
           </div>

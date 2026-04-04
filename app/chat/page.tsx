@@ -4,8 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 import { characters, getCharacter } from "@/data/characters";
 import { getMenusByCharacter, getMenu } from "@/data/menus";
 
@@ -55,6 +54,7 @@ function ChatContent() {
   const [selectedCharId, setSelectedCharId] = useState(initCharId);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [agenticMode, setAgenticMode] = useState(false);
   const [adminConfig, setAdminConfig] = useState<Record<string, boolean>>({});
   const [storageLoaded, setStorageLoaded] = useState(false);
 
@@ -183,13 +183,22 @@ function ChatContent() {
     // Show spinner, fetch full response
     setIsLoading(true);
     try {
-      const response = await fetch("/api/chat", {
+      const endpoint = agenticMode ? "/api/agent/run" : "/api/chat";
+      const payload = agenticMode
+        ? {
+            goal: trimmed,
+            characterId: convCharId,
+            conversationHistory: allMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
+          }
+        : {
+            characterId: convCharId,
+            messages: allMessages.map((m) => ({ role: m.role, content: m.content })),
+          };
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          characterId: convCharId,
-          messages: allMessages.map((m) => ({ role: m.role, content: m.content })),
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) throw new Error("API error");
@@ -432,11 +441,7 @@ function ChatContent() {
                 }`}
               >
                 {msg.role === "assistant" ? (
-                  <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:mt-3 prose-headings:mb-1">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {msg.content}
-                    </ReactMarkdown>
-                  </div>
+                  <MarkdownRenderer content={msg.content} showActions={true} />
                 ) : (
                   <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                 )}
@@ -469,13 +474,17 @@ function ChatContent() {
         {/* Input bar */}
         <div className="bg-white border-t border-gray-200 p-4">
           <div className="flex gap-3 items-end max-w-4xl mx-auto">
+            {/* Agenticモードトグル */}
             <button
-              className="text-gray-300 hover:text-gray-500 p-2 rounded-xl hover:bg-gray-100 transition-colors flex-shrink-0"
-              title="ファイル添付（近日対応）"
+              onClick={() => setAgenticMode(!agenticMode)}
+              title={agenticMode ? "Agenticモード（Tool Use有効）" : "通常モード"}
+              className={`p-2 rounded-xl transition-colors flex-shrink-0 text-xs font-bold ${
+                agenticMode
+                  ? "bg-purple-100 text-purple-600 hover:bg-purple-200"
+                  : "text-gray-300 hover:text-gray-500 hover:bg-gray-100"
+              }`}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
-              </svg>
+              {agenticMode ? "⚡ Agentic" : "⚡"}
             </button>
             <textarea
               ref={textareaRef}

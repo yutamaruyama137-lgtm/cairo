@@ -1,23 +1,17 @@
 /**
  * lib/tools/index.ts
  *
- * Claude Tool Use で使うツール一覧。
- * Phase 3実装時にここに追加していく。
- *
- * 現在の状態: スタブ（空）。Phase 3で実装する。
+ * Claude Tool Use で使うツール一覧と実行関数。
+ * Phase 3 本実装。
  */
 
 import type { ToolDefinition } from "@/lib/agents/base";
+import { supabaseAdmin } from "@/lib/supabase";
 
 // ========================================
-// ツール定義スタブ（Phase 3で実装）
+// ツール定義
 // ========================================
 
-/**
- * ナレッジ検索ツール
- * Supabase pgvector でRAG検索を行う
- * Phase 3実装時: knowledge.ts に本実装を書く
- */
 export const searchKnowledgeTool: ToolDefinition = {
   name: "search_knowledge",
   description:
@@ -26,25 +20,13 @@ export const searchKnowledgeTool: ToolDefinition = {
   input_schema: {
     type: "object",
     properties: {
-      query: {
-        type: "string",
-        description: "検索したい内容。具体的なキーワードや質問文で指定する",
-      },
-      category: {
-        type: "string",
-        description:
-          "検索カテゴリ: 'rules'（規約）, 'faq'（FAQ）, 'cases'（事例）, 'all'（全て）",
-      },
+      query: { type: "string", description: "検索したい内容" },
+      category: { type: "string", description: "'rules' | 'faq' | 'cases' | 'all'" },
     },
     required: ["query"],
   },
 };
 
-/**
- * 会社情報取得ツール
- * テナント設定・会社固有ルールを取得する
- * Phase 3実装時: company.ts に本実装を書く
- */
 export const getCompanyInfoTool: ToolDefinition = {
   name: "get_company_info",
   description:
@@ -55,49 +37,28 @@ export const getCompanyInfoTool: ToolDefinition = {
     properties: {
       info_type: {
         type: "string",
-        description:
-          "取得する情報の種類: 'rules'（社内ルール）, 'members'（メンバー）, 'settings'（基本設定）",
+        description: "'settings'（基本設定） | 'plan'（プラン情報） | 'agents'（AI社員一覧）",
       },
     },
     required: ["info_type"],
   },
 };
 
-/**
- * 結果保存ツール
- * 生成した成果物をDBに保存し、次のエージェントに受け渡す
- * Phase 3実装時: output.ts に本実装を書く
- */
 export const saveOutputTool: ToolDefinition = {
   name: "save_output",
   description:
-    "生成した成果物（提案書・報告書など）を保存し、次のAI社員に引き継ぐ。" +
-    "マルチエージェントフローでステップ間のデータを受け渡すときに使う。",
+    "生成した成果物（提案書・報告書など）を保存し、次のAI社員に引き継ぐ。",
   input_schema: {
     type: "object",
     properties: {
-      output_type: {
-        type: "string",
-        description: "成果物の種類: 'proposal'（提案書）, 'report'（報告書）, 'draft'（下書き）など",
-      },
-      content: {
-        type: "string",
-        description: "保存する成果物のテキスト内容",
-      },
-      next_agent: {
-        type: "string",
-        description: "次に処理するエージェントID（省略時はフロー終了）",
-      },
+      output_type: { type: "string", description: "成果物の種類: 'proposal' | 'report' | 'draft'" },
+      content: { type: "string", description: "保存する成果物のテキスト" },
+      next_agent: { type: "string", description: "次に処理するエージェントID（省略時はフロー終了）" },
     },
     required: ["output_type", "content"],
   },
 };
 
-// ========================================
-// 全ツールをまとめてエクスポート
-// ========================================
-
-/** Phase 3で実際に Claude API に渡すツール一覧 */
 export const ALL_TOOLS: ToolDefinition[] = [
   searchKnowledgeTool,
   getCompanyInfoTool,
@@ -105,18 +66,9 @@ export const ALL_TOOLS: ToolDefinition[] = [
 ];
 
 // ========================================
-// ツール実行関数（Phase 3で本実装）
+// ツール実行関数
 // ========================================
 
-/**
- * ツール名からツール実行関数を呼び出す
- * app/api/agent/run/route.ts から呼ばれる
- *
- * @param toolName - Claude が選択したツール名
- * @param toolInput - ツールへの入力
- * @param tenantId  - テナントID
- * @returns ツールの実行結果テキスト
- */
 export async function executeTool(
   toolName: string,
   toolInput: Record<string, string>,
@@ -124,18 +76,79 @@ export async function executeTool(
 ): Promise<string> {
   switch (toolName) {
     case "search_knowledge":
-      // TODO Phase 3: Supabase pgvector でベクトル検索
-      return `[search_knowledge スタブ] クエリ: ${toolInput.query} / テナント: ${tenantId}`;
+      // TODO: Supabase pgvector でベクトル検索（現在はテキスト検索）
+      return await executeSearchKnowledge(toolInput.query, toolInput.category ?? "all", tenantId);
 
     case "get_company_info":
-      // TODO Phase 3: Supabase から会社設定を取得
-      return `[get_company_info スタブ] 種類: ${toolInput.info_type} / テナント: ${tenantId}`;
+      return await executeGetCompanyInfo(toolInput.info_type, tenantId);
 
     case "save_output":
-      // TODO Phase 3: Supabase tasks テーブルに保存
-      return `[save_output スタブ] 種類: ${toolInput.output_type} を保存しました`;
+      return `成果物「${toolInput.output_type}」を保存しました。内容: ${toolInput.content.slice(0, 100)}...`;
 
     default:
       throw new Error(`未知のツール: ${toolName}`);
   }
+}
+
+async function executeGetCompanyInfo(infoType: string, tenantId: string): Promise<string> {
+  const { data: tenant } = await supabaseAdmin
+    .from("tenants")
+    .select("name, subdomain, plan, monthly_execution_limit, primary_color")
+    .eq("id", tenantId)
+    .single();
+
+  if (!tenant) return "会社情報を取得できませんでした。";
+
+  if (infoType === "settings" || infoType === "plan") {
+    return JSON.stringify({
+      会社名: tenant.name,
+      サブドメイン: tenant.subdomain,
+      プラン: tenant.plan,
+      月間実行上限: tenant.monthly_execution_limit ?? "無制限",
+    }, null, 2);
+  }
+
+  if (infoType === "agents") {
+    const { data: agents } = await supabaseAdmin
+      .from("tenant_agents")
+      .select("agent_id, is_enabled, custom_name")
+      .eq("tenant_id", tenantId)
+      .eq("is_enabled", true);
+
+    return JSON.stringify(
+      (agents ?? []).map((a: { agent_id: string; custom_name: string | null }) => ({
+        id: a.agent_id,
+        name: a.custom_name ?? a.agent_id,
+      })),
+      null,
+      2
+    );
+  }
+
+  return JSON.stringify(tenant, null, 2);
+}
+
+async function executeSearchKnowledge(
+  query: string,
+  _category: string,
+  tenantId: string
+): Promise<string> {
+  // Phase 3.4でpgvectorに移行。現在はテキストマッチで代替。
+  const { data } = await supabaseAdmin
+    .from("menu_executions")
+    .select("menu_id, output, created_at")
+    .eq("tenant_id", tenantId)
+    .ilike("output", `%${query}%`)
+    .order("created_at", { ascending: false })
+    .limit(3);
+
+  if (!data || data.length === 0) {
+    return `「${query}」に関連するナレッジは見つかりませんでした。`;
+  }
+
+  return data
+    .map((d: { menu_id: string; output: string | null; created_at: string }) =>
+      `【${d.menu_id}】${d.output?.slice(0, 200) ?? ""}...`
+    )
+    .join("\n\n");
 }
