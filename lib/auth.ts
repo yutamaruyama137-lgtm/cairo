@@ -86,7 +86,7 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
 
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger }) {
       // 初回サインイン時
       if (account && user?.email) {
         try {
@@ -104,13 +104,29 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
-      // 既存セッションで tenantId が未設定（古いトークン対応）
+      // update() が呼ばれたとき（オンボーディング完了後など）はDBから再取得
+      if (trigger === "update" && token.userId) {
+        try {
+          const { data } = await supabaseAdmin
+            .from("users")
+            .select("tenant_id, role")
+            .eq("id", token.userId as string)
+            .maybeSingle();
+
+          token.tenantId = data?.tenant_id ?? null;
+          token.role = data?.role ?? "member";
+        } catch {
+          // 再取得失敗時は現在の値を維持
+        }
+      }
+
+      // 古いトークン（tenantId フィールドなし）の対応
       if (token.userId && token.tenantId === undefined) {
         try {
           const { data } = await supabaseAdmin
             .from("users")
             .select("tenant_id, role")
-            .eq("id", token.userId)
+            .eq("id", token.userId as string)
             .maybeSingle();
 
           token.tenantId = data?.tenant_id ?? null;
