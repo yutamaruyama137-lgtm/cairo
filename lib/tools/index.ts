@@ -283,49 +283,7 @@ async function executeSearchKnowledge(
 }
 
 async function executeWebSearch(query: string): Promise<string> {
-  const braveApiKey = process.env.BRAVE_API_KEY;
-
-  // Brave Search API を使う（API キーがある場合）
-  if (braveApiKey) {
-    try {
-      const encodedQuery = encodeURIComponent(query);
-      const res = await fetch(
-        `https://api.search.brave.com/res/v1/web/search?q=${encodedQuery}&count=5&lang=ja`,
-        {
-          headers: {
-            "Accept": "application/json",
-            "Accept-Encoding": "gzip",
-            "X-Subscription-Token": braveApiKey,
-          },
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error(`Brave Search API エラー: ${res.status}`);
-      }
-
-      const data = await res.json() as {
-        web?: {
-          results?: Array<{ title: string; url: string; description?: string }>;
-        };
-      };
-
-      const results = data?.web?.results ?? [];
-      if (results.length === 0) {
-        return `「${query}」の検索結果が見つかりませんでした。`;
-      }
-
-      return results
-        .slice(0, 5)
-        .map((r, i) => `${i + 1}. **${r.title}**\n${r.url}\n${r.description ?? ""}`)
-        .join("\n\n");
-    } catch (err) {
-      console.warn("[web_search] Brave Search API エラー:", err);
-      // フォールバックへ
-    }
-  }
-
-  // DuckDuckGo Instant Answer API（フォールバック）
+  // DuckDuckGo Instant Answer API
   try {
     const encodedQuery = encodeURIComponent(query);
     const res = await fetch(
