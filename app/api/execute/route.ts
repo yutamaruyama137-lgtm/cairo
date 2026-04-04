@@ -6,6 +6,7 @@ import { getMenu } from "@/data/menus";
 import { getCharacter } from "@/data/characters";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getUserByEmail } from "@/lib/db/users";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { ExecuteRequest } from "@/types";
 
 export async function POST(req: NextRequest) {
@@ -23,13 +24,25 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "キャラクターが見つかりません" }, { status: 404 });
     }
 
+    // 月間実行回数チェック
+    const rateLimit = await checkRateLimit(DEFAULT_TENANT_ID);
+    if (!rateLimit.allowed) {
+      return Response.json(
+        {
+          error: "rate_limit_exceeded",
+          message: `今月の実行回数上限（${rateLimit.limit}回）に達しました。プランのアップグレードをご検討ください。`,
+          used: rateLimit.used,
+          limit: rateLimit.limit,
+        },
+        { status: 429 }
+      );
+    }
+
     // セッションからユーザーIDを取得
     const session = await getServerSession(authOptions);
-    console.log("[execute] session email:", session?.user?.email ?? "none");
     let userId: string | null = null;
     if (session?.user?.email) {
       const dbUser = await getUserByEmail(session.user.email, DEFAULT_TENANT_ID);
-      console.log("[execute] dbUser:", dbUser);
       userId = dbUser?.id ?? null;
     }
 
@@ -66,7 +79,6 @@ ${character.greeting}`;
           controller.close();
 
           // ストリーム完了後にDBへ保存
-          console.log("[execute] saving to DB, userId:", userId, "menuId:", menuId);
           const { error: dbError } = await supabaseAdmin
             .from("menu_executions")
             .insert({
@@ -79,11 +91,7 @@ ${character.greeting}`;
               duration_ms: Date.now() - startedAt,
               status: "completed",
             });
-          if (dbError) {
-            console.error("[execute] DB save error:", dbError);
-          } else {
-            console.log("[execute] DB save success");
-          }
+          if (dbError) console.error("[execute] DB save error:", dbError);
         } catch (error) {
           controller.error(error);
         }

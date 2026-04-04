@@ -34,9 +34,10 @@ export default withAuth(
     // サブドメインがある場合はSupabaseで解決
     if (resolvedSubdomain) {
       try {
+        const internalSecret = process.env.INTERNAL_API_SECRET ?? "";
         const res = await fetch(
           `${req.nextUrl.origin}/api/tenant/resolve?subdomain=${resolvedSubdomain}`,
-          { headers: { "x-internal": "1" } }
+          { headers: { "x-internal-secret": internalSecret } }
         );
         if (res.ok) {
           const json = await res.json();

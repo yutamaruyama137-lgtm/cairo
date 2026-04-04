@@ -151,6 +151,11 @@ export function orchestrateStream(input: AgenticInput): ReadableStream {
 
           break;
         }
+
+        // MAX_STEPS を使い切ってもテキスト応答がなかった場合
+        if (stepCount >= MAX_STEPS) {
+          enqueue("\n（最大ステップ数に達しました。処理を終了します。）");
+        }
       } catch (err) {
         enqueue(`\nエラーが発生しました: ${err instanceof Error ? err.message : "Unknown error"}`);
       } finally {

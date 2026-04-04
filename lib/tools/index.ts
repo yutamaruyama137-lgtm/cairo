@@ -134,11 +134,13 @@ async function executeSearchKnowledge(
   tenantId: string
 ): Promise<string> {
   // Phase 3.4でpgvectorに移行。現在はテキストマッチで代替。
+  // SQLインジェクション対策: クエリ長を制限し、Supabaseのパラメータバインディングに任せる
+  const safeQuery = query.slice(0, 200).replace(/[%_\\]/g, (c) => `\\${c}`);
   const { data } = await supabaseAdmin
     .from("menu_executions")
     .select("menu_id, output, created_at")
     .eq("tenant_id", tenantId)
-    .ilike("output", `%${query}%`)
+    .ilike("output", `%${safeQuery}%`)
     .order("created_at", { ascending: false })
     .limit(3);
 

@@ -7,7 +7,6 @@ import { getTenantAgentConfigs, getTenantDetail } from "@/lib/db/admin";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { characters } from "@/data/characters";
 import Link from "next/link";
-import Image from "next/image";
 import AdminAgentCard from "./AdminAgentCard";
 
 export default async function AdminPage() {

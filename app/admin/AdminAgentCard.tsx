@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import type { AICharacter } from "@/types";
 import type { TenantAgentConfig } from "@/lib/db/admin";
 
@@ -30,11 +29,10 @@ export default function AdminAgentCard({ character, config, tenantId }: Props) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await fetch("/api/admin/agent", {
+      const res = await fetch("/api/admin/agent", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tenantId,
           agentId: character.id,
           is_enabled: isEnabled,
           custom_name: customName || null,
@@ -42,8 +40,10 @@ export default function AdminAgentCard({ character, config, tenantId }: Props) {
           output_format: format,
         }),
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+      }
     } finally {
       setSaving(false);
     }
@@ -54,7 +54,8 @@ export default function AdminAgentCard({ character, config, tenantId }: Props) {
       {/* ヘッダー */}
       <div className={`bg-gradient-to-r ${character.gradientFrom} ${character.gradientTo} px-4 py-3 flex items-center justify-between`}>
         <div className="flex items-center gap-3">
-          <Image src={`/avatars/${character.id}.svg`} alt={character.name} width={36} height={36} className="rounded-full border-2 border-white/40" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`/avatars/${character.id}.svg`} alt={character.name} width={36} height={36} className="rounded-full border-2 border-white/40" />
           <div className="text-white">
             <div className="font-black text-sm">{customName || character.name}</div>
             <div className="text-xs opacity-80">{character.department}</div>
