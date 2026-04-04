@@ -18,7 +18,7 @@ import {
   executeSendGmail,
   executePostToSlack,
   executeSaveToGoogleDrive,
-  executeCreateCalendarEvent,
+  executeCreateNotionPage,
 } from "@/lib/tools/nango-actions";
 
 // ========================================
@@ -182,16 +182,16 @@ export async function executeTool(
 
     // Phase 3: Nango ツール
     case "send_gmail":
-      return await executeSendGmail(toolInput, tenantId, userId);
+      return await executeSendGmail(toolInput);
 
     case "post_to_slack":
-      return await executePostToSlack(toolInput, tenantId, userId);
+      return await executePostToSlack(toolInput);
 
     case "save_to_google_drive":
-      return await executeSaveToGoogleDrive(toolInput, tenantId, userId);
+      return await executeSaveToGoogleDrive(toolInput);
 
-    case "create_calendar_event":
-      return await executeCreateCalendarEvent(toolInput, tenantId, userId);
+    case "create_notion_page":
+      return await executeCreateNotionPage(toolInput);
 
     default:
       throw new Error(`未知のツール: ${toolName}`);
