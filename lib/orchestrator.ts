@@ -16,6 +16,7 @@ import { ALL_TOOLS, executeTool } from "@/lib/tools";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getTenantAgentConfigs } from "@/lib/db/admin";
 import { characters } from "@/data/characters";
+import { getAgent } from "@/lib/agents/index";
 
 const client = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -98,7 +99,17 @@ export function orchestrateStream(input: AgenticInput): ReadableStream {
           if (toolUseBlocks.length > 0) {
             // ツール使用をユーザーに通知
             for (const toolBlock of toolUseBlocks) {
-              enqueue(`\n🔧 **${toolBlock.name}** を実行中...\n`);
+              if (toolBlock.name === "delegate_to_agent") {
+                const delegateInput = toolBlock.input as Record<string, string>;
+                const agentId = delegateInput.agent_id ?? "";
+                const agentSpec = getAgent(agentId);
+                const agentLabel = agentSpec
+                  ? `${agentSpec.nameJa}（${agentSpec.department}）`
+                  : agentId;
+                enqueue(`\n🤝 **${agentLabel}** に依頼中...\n`);
+              } else {
+                enqueue(`\n🔧 **${toolBlock.name}** を実行中...\n`);
+              }
               toolCallsMade.push(toolBlock.name);
             }
 
@@ -108,8 +119,21 @@ export function orchestrateStream(input: AgenticInput): ReadableStream {
               const result = await executeTool(
                 toolBlock.name,
                 toolBlock.input as Record<string, string>,
-                input.tenantId
+                input.tenantId,
+                input.userId
               );
+
+              // 委託完了の通知
+              if (toolBlock.name === "delegate_to_agent") {
+                const delegateInput = toolBlock.input as Record<string, string>;
+                const agentId = delegateInput.agent_id ?? "";
+                const agentSpec = getAgent(agentId);
+                const agentLabel = agentSpec
+                  ? `${agentSpec.nameJa}（${agentSpec.department}）`
+                  : agentId;
+                enqueue(`\n✅ **${agentLabel}** から回答を受信\n`);
+              }
+
               toolResults.push({
                 type: "tool_result",
                 tool_use_id: toolBlock.id,

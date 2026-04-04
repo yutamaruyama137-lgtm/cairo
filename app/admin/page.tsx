@@ -127,6 +127,22 @@ export default async function AdminPage() {
           </Link>
         </div>
 
+        {/* 外部連携 */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex items-center justify-between">
+          <div>
+            <h2 className="font-black text-gray-800 text-lg">外部サービス連携</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Gmail・Slack・Google Drive・Google Calendarと連携してAI社員の自動化範囲を拡張します
+            </p>
+          </div>
+          <Link
+            href="/admin/integrations"
+            className="bg-indigo-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-indigo-700 transition-colors whitespace-nowrap"
+          >
+            設定する →
+          </Link>
+        </div>
+
         {/* AI社員設定 */}
         <div>
           <h2 className="font-black text-gray-800 text-lg mb-2">AI社員設定</h2>

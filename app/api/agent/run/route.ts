@@ -13,8 +13,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "goal と characterId は必須です" }, { status: 400 });
     }
 
+    // セッションからテナントIDを取得（フォールバック: DEFAULT_TENANT_ID）
+    const session = await getServerSession(authOptions);
+    const tenantId = session?.user?.tenantId ?? DEFAULT_TENANT_ID;
+
     // 月間実行回数チェック
-    const rateLimit = await checkRateLimit(DEFAULT_TENANT_ID);
+    const rateLimit = await checkRateLimit(tenantId);
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {
@@ -28,10 +32,9 @@ export async function POST(req: NextRequest) {
     }
 
     // ユーザーID取得
-    const session = await getServerSession(authOptions);
     let userId: string | undefined;
     if (session?.user?.email) {
-      const dbUser = await getUserByEmail(session.user.email, DEFAULT_TENANT_ID);
+      const dbUser = await getUserByEmail(session.user.email, tenantId);
       userId = dbUser?.id;
     }
 
@@ -39,7 +42,7 @@ export async function POST(req: NextRequest) {
     const stream = orchestrateStream({
       goal,
       characterId,
-      tenantId: DEFAULT_TENANT_ID,
+      tenantId,
       userId,
       conversationHistory,
     });
