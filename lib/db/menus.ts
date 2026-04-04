@@ -30,6 +30,7 @@ export interface TenantMenuRow {
   output_label: string;
   is_enabled: boolean;
   sort_order: number;
+  system_prompt_override: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -50,6 +51,7 @@ export interface TenantMenuInput {
   output_label: string;
   is_enabled?: boolean;
   sort_order?: number;
+  system_prompt_override?: string | null;
 }
 
 // ========================================
@@ -153,6 +155,7 @@ export async function upsertTenantMenu(
         output_label: input.output_label,
         is_enabled: input.is_enabled ?? true,
         sort_order: input.sort_order ?? 0,
+        system_prompt_override: input.system_prompt_override ?? null,
       },
       { onConflict: "tenant_id,menu_id" }
     )
@@ -183,6 +186,7 @@ export async function updateTenantMenu(
   if (input.output_label !== undefined)    updateData.output_label    = input.output_label;
   if (input.is_enabled !== undefined)      updateData.is_enabled      = input.is_enabled;
   if (input.sort_order !== undefined)      updateData.sort_order      = input.sort_order;
+  if (input.system_prompt_override !== undefined) updateData.system_prompt_override = input.system_prompt_override;
 
   const { data, error } = await supabaseAdmin
     .from("tenant_menus")

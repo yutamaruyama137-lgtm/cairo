@@ -38,7 +38,8 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { menu_id, character_id, title, description, icon, estimated_seconds, human_minutes,
-            category, inputs, prompt_template, knowledge_sources, output_label, is_enabled, sort_order } = body;
+            category, inputs, prompt_template, knowledge_sources, output_label, is_enabled, sort_order,
+            system_prompt_override } = body;
 
     if (!menu_id || !character_id || !title || !prompt_template) {
       return NextResponse.json({ error: "menu_id, character_id, title, prompt_template は必須です" }, { status: 400 });
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
       output_label: output_label ?? "成果物",
       is_enabled: is_enabled ?? true,
       sort_order: sort_order ?? 0,
+      system_prompt_override: system_prompt_override ?? null,
     });
 
     return NextResponse.json({ menu });

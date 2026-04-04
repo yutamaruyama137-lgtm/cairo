@@ -103,8 +103,10 @@ export async function POST(req: NextRequest) {
       .single();
     const tonmana = agentConfig?.system_prompt_suffix ?? "";
 
-    // システムプロンプト（キャラクター設定 + テナントトンマナ）
-    const systemPrompt = `あなたはAI社員「${character.name}」です。${character.department}の担当です。
+    // システムプロンプト（オーバーライドがあればそれを使う、なければデフォルト）
+    const systemPrompt = dbMenuRow?.system_prompt_override
+      ? dbMenuRow.system_prompt_override + (tonmana ? `\n\n${tonmana}` : "")
+      : `あなたはAI社員「${character.name}」です。${character.department}の担当です。
 役割：${character.role}
 
 【行動指針】

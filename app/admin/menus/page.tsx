@@ -31,6 +31,7 @@ function emptyForm() {
     category: "文書作成" as MenuCategory,
     inputs: [] as MenuInput[],
     prompt_template: "",
+    system_prompt_override: "" as string,
     knowledge_sources: [] as string[],
     output_label: "成果物",
     is_enabled: true,
@@ -51,6 +52,7 @@ export default function AdminMenusPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filterChar, setFilterChar] = useState<string>("all");
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const fetchMenus = useCallback(async () => {
     setLoading(true);
@@ -70,6 +72,7 @@ export default function AdminMenusPage() {
     setEditTarget(null);
     setForm(emptyForm());
     setError(null);
+    setShowAdvanced(false);
     setShowForm(true);
   }
 
@@ -86,12 +89,14 @@ export default function AdminMenusPage() {
       category: menu.category as MenuCategory,
       inputs: menu.inputs ?? [],
       prompt_template: menu.prompt_template,
+      system_prompt_override: menu.system_prompt_override ?? "",
       knowledge_sources: menu.knowledge_sources ?? [],
       output_label: menu.output_label,
       is_enabled: menu.is_enabled,
       sort_order: menu.sort_order,
     });
     setError(null);
+    setShowAdvanced(!!(menu.system_prompt_override));
     setShowForm(true);
   }
 
@@ -480,6 +485,35 @@ export default function AdminMenusPage() {
                 <p className="text-xs text-gray-400 mt-1">
                   入力フィールドの変数名を {'{{key}}'} 形式で埋め込めます
                 </p>
+              </div>
+
+              {/* 高度な設定（システムプロンプト） */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvanced((v) => !v)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                >
+                  <span className="text-xs font-bold text-gray-600">
+                    🔧 高度な設定（システムプロンプトの上書き）
+                    {form.system_prompt_override && <span className="ml-2 text-blue-500">● 設定済み</span>}
+                  </span>
+                  <span className="text-gray-400 text-xs">{showAdvanced ? "▲" : "▼"}</span>
+                </button>
+                {showAdvanced && (
+                  <div className="px-4 py-4 space-y-2">
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      空白の場合はAI社員のデフォルト設定を使用します。入力すると、このメニュー専用のシステムプロンプトに完全に上書きされます。
+                    </p>
+                    <textarea
+                      value={form.system_prompt_override}
+                      onChange={(e) => setForm((f) => ({ ...f, system_prompt_override: e.target.value }))}
+                      rows={8}
+                      placeholder={"例：あなたは法律の専門家です。以下の契約書を厳密にレビューし...\n\n（空白 = AI社員のデフォルト設定を使用）"}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-400 font-mono leading-relaxed"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* 参照ナレッジソース */}

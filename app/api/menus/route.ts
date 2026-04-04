@@ -29,6 +29,8 @@ export async function GET(req: NextRequest) {
           id: r.menu_id,
           title: r.title,
           icon: r.icon,
+          estimated_seconds: r.estimated_seconds,
+          human_minutes: r.human_minutes,
         }));
         return NextResponse.json({ menus });
       }
@@ -42,6 +44,8 @@ export async function GET(req: NextRequest) {
     id: m.id,
     title: m.title,
     icon: m.icon,
+    estimated_seconds: m.estimatedSeconds,
+    human_minutes: m.humanMinutes,
   }));
   return NextResponse.json({ menus: staticMenus });
 }

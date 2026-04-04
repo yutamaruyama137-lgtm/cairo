@@ -59,14 +59,14 @@ function ChatContent() {
   const [storageLoaded, setStorageLoaded] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadToast, setUploadToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [dbMenus, setDbMenus] = useState<{ id: string; title: string; icon: string }[]>([]);
+  const [dbMenus, setDbMenus] = useState<{ id: string; title: string; icon: string; estimated_seconds?: number; human_minutes?: number }[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const didAutoSend = useRef(false);
   // Always holds the latest sendMessage to avoid stale closures in effects
-  const sendMsgRef = useRef<((text: string) => Promise<void>) | null>(null);
+  const sendMsgRef = useRef<((text: string, ack?: string) => Promise<void>) | null>(null);
 
   // ── Load localStorage ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -111,14 +111,34 @@ function ChatContent() {
   // ── Auto-send from URL ?menu= param ──────────────────────────────────────
   useEffect(() => {
     if (!storageLoaded || !initMenuId || didAutoSend.current) return;
-    const menu = getMenu(initMenuId);
+
+    // DBメニュー優先、なければ静的フォールバック
+    const dbMenu = dbMenus.find((m) => m.id === initMenuId);
+    const staticMenu = getMenu(initMenuId);
+
+    // dbMenusがまだ空でstaticも見つからない場合は待機
+    if (!dbMenu && !staticMenu && dbMenus.length === 0) return;
+
+    const menu = dbMenu ?? (staticMenu ? {
+      id: staticMenu.id,
+      title: staticMenu.title,
+      icon: staticMenu.icon,
+      estimated_seconds: staticMenu.estimatedSeconds,
+      human_minutes: staticMenu.humanMinutes,
+    } : null);
+
     if (!menu) return;
+
     didAutoSend.current = true;
+    const estSec = menu.estimated_seconds ?? 30;
+    const humanMin = menu.human_minutes ?? 30;
+    const ack = `かしこまりました！**${menu.title}**を承りました。\n\n⏱️ 予定完了：約${estSec}秒後（人が行うと約${humanMin}分の作業です）\n\n終わり次第こちらでご報告します。少々お待ちください...`;
+
     const timer = setTimeout(() => {
-      sendMsgRef.current?.(menu.title + "をお願いします");
+      sendMsgRef.current?.(menu.title + "をお願いします", ack);
     }, 150);
     return () => clearTimeout(timer);
-  }, [storageLoaded, initMenuId]);
+  }, [storageLoaded, initMenuId, dbMenus]);
 
   // ── Derived state ──────────────────────────────────────────────────────────
   const activeConversation = conversations.find((c) => c.id === activeConvId) ?? null;
@@ -172,7 +192,7 @@ function ChatContent() {
     }
   };
 
-  const sendMessage = async (text: string) => {
+  const sendMessage = async (text: string, ack?: string) => {
     if (!text.trim() || isLoading) return;
     const trimmed = text.trim();
     setInputText("");
@@ -244,7 +264,8 @@ function ChatContent() {
       const decoder = new TextDecoder();
       if (!reader) throw new Error("No reader");
 
-      // メッセージスロットを先に作成（空）
+      // メッセージスロットを先に作成（承認メッセージがあればそれを初期値に）
+      const ackHeader = ack ? `${ack}\n\n---\n\n` : "";
       const aiMsgId = genId();
       setConversations((prev) =>
         prev.map((c) => {
@@ -253,11 +274,13 @@ function ChatContent() {
             ...c,
             messages: [
               ...c.messages,
-              { id: aiMsgId, role: "assistant" as const, content: "", timestamp: Date.now() },
+              { id: aiMsgId, role: "assistant" as const, content: ackHeader, timestamp: Date.now() },
             ],
           };
         })
       );
+      // 承認メッセージがあれば最初からスピナーを消す
+      if (ack) setIsLoading(false);
 
       // チャンクごとにリアルタイム表示
       let firstChunk = true;
