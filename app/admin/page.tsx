@@ -95,6 +95,22 @@ export default async function AdminPage() {
           </Link>
         </div>
 
+        {/* メニュー管理 */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex items-center justify-between">
+          <div>
+            <h2 className="font-black text-gray-800 text-lg">メニュー管理</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              AI社員の仕事メニューを追加・編集・削除できます。プロンプトやナレッジ参照も設定可能
+            </p>
+          </div>
+          <Link
+            href="/admin/menus"
+            className="bg-blue-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-blue-600 transition-colors whitespace-nowrap"
+          >
+            管理する →
+          </Link>
+        </div>
+
         {/* ナレッジベースへのリンク */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 flex items-center justify-between">
           <div>

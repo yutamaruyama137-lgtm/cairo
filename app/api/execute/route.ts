@@ -7,6 +7,9 @@ import { getCharacter } from "@/data/characters";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getUserByEmail } from "@/lib/db/users";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getTenantMenu, rowToMenuItem } from "@/lib/db/menus";
+import { searchKnowledgeVector, searchKnowledgeText } from "@/lib/db/knowledge";
+import { generateEmbedding } from "@/lib/embeddings";
 import { ExecuteRequest } from "@/types";
 
 export async function POST(req: NextRequest) {
@@ -14,18 +17,35 @@ export async function POST(req: NextRequest) {
     const body: ExecuteRequest = await req.json();
     const { menuId, inputs } = body;
 
-    // メニューとキャラクターを取得
-    const menu = getMenu(menuId);
-    if (!menu) {
-      return Response.json({ error: "メニューが見つかりません" }, { status: 404 });
+    // セッション・テナントIDを取得
+    const session = await getServerSession(authOptions);
+    const tenantId = session?.user?.tenantId ?? DEFAULT_TENANT_ID;
+
+    // ① DB のテナントメニューを優先して取得、なければ静的メニューにフォールバック
+    let menu;
+    let knowledgeSources: string[] = [];
+
+    const dbMenuRow = await getTenantMenu(tenantId, menuId).catch(() => null);
+    if (dbMenuRow) {
+      const converted = rowToMenuItem(dbMenuRow);
+      menu = converted;
+      knowledgeSources = converted.knowledgeSources;
+    } else {
+      // 静的メニューにフォールバック
+      const staticMenu = getMenu(menuId);
+      if (!staticMenu) {
+        return Response.json({ error: "メニューが見つかりません" }, { status: 404 });
+      }
+      menu = staticMenu;
     }
+
     const character = getCharacter(menu.characterId);
     if (!character) {
       return Response.json({ error: "キャラクターが見つかりません" }, { status: 404 });
     }
 
     // 月間実行回数チェック
-    const rateLimit = await checkRateLimit(DEFAULT_TENANT_ID);
+    const rateLimit = await checkRateLimit(tenantId);
     if (!rateLimit.allowed) {
       return Response.json(
         {
@@ -38,11 +58,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // セッションからユーザーIDを取得
-    const session = await getServerSession(authOptions);
+    // ユーザーIDを取得
     let userId: string | null = null;
     if (session?.user?.email) {
-      const dbUser = await getUserByEmail(session.user.email, DEFAULT_TENANT_ID);
+      const dbUser = await getUserByEmail(session.user.email, tenantId);
       userId = dbUser?.id ?? null;
     }
 
@@ -52,11 +71,34 @@ export async function POST(req: NextRequest) {
       userPrompt = userPrompt.replaceAll(`{{${key}}}`, value || "（未入力）");
     }
 
+    // ② 参照ナレッジを自動取得して userPrompt に注入
+    if (knowledgeSources.length > 0) {
+      try {
+        // 指定されたソースのチャンクをソース名で取得
+        const { data: chunks } = await supabaseAdmin
+          .from("knowledge_chunks")
+          .select("content, source_name")
+          .eq("tenant_id", tenantId)
+          .in("source_name", knowledgeSources)
+          .order("created_at", { ascending: true })
+          .limit(20);
+
+        if (chunks && chunks.length > 0) {
+          const knowledgeText = chunks
+            .map((c: { source_name: string; content: string }) => `【${c.source_name}】\n${c.content}`)
+            .join("\n\n---\n\n");
+          userPrompt = `【参考情報】\n${knowledgeText}\n\n---\n\n${userPrompt}`;
+        }
+      } catch (e) {
+        console.warn("[execute] knowledge fetch error:", e);
+      }
+    }
+
     // テナント固有のトンマナ（system_prompt_suffix）を取得
     const { data: agentConfig } = await supabaseAdmin
       .from("tenant_agents")
       .select("system_prompt_suffix")
-      .eq("tenant_id", DEFAULT_TENANT_ID)
+      .eq("tenant_id", tenantId)
       .eq("agent_id", menu.characterId)
       .single();
     const tonmana = agentConfig?.system_prompt_suffix ?? "";
@@ -77,7 +119,6 @@ ${character.greeting}`;
     const startedAt = Date.now();
     const outputChunks: string[] = [];
 
-    // ストリーミングレスポンスを返す（出力を収集しながら）
     const stream = new ReadableStream({
       async start(controller) {
         try {
@@ -87,11 +128,11 @@ ${character.greeting}`;
           }
           controller.close();
 
-          // ストリーム完了後にDBへ保存
+          // 完了後にDBへ保存
           const { error: dbError } = await supabaseAdmin
             .from("menu_executions")
             .insert({
-              tenant_id: DEFAULT_TENANT_ID,
+              tenant_id: tenantId,
               user_id: userId,
               menu_id: menuId,
               character_id: menu.characterId,

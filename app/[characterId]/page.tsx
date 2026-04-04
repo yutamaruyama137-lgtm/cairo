@@ -1,19 +1,37 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getCharacter } from "@/data/characters";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { getCharacter, characters } from "@/data/characters";
 import { getMenusByCharacter } from "@/data/menus";
-import { characters } from "@/data/characters";
+import { getTenantMenusByCharacter, rowToMenuItem } from "@/lib/db/menus";
+import type { MenuItem } from "@/types";
 
 interface Props {
   params: { characterId: string };
 }
 
-export default function CharacterPage({ params }: Props) {
+export default async function CharacterPage({ params }: Props) {
   const character = getCharacter(params.characterId);
   if (!character) notFound();
 
-  const menus = getMenusByCharacter(character.id);
+  // テナントIDを取得
+  const session = await getServerSession(authOptions);
+  const tenantId = session?.user?.tenantId ?? null;
+
+  // DBのテナントメニューを優先、なければ静的メニューにフォールバック
+  let menus: MenuItem[];
+  if (tenantId) {
+    const dbRows = await getTenantMenusByCharacter(tenantId, character.id).catch(() => []);
+    if (dbRows.length > 0) {
+      menus = dbRows.map((row) => rowToMenuItem(row));
+    } else {
+      menus = getMenusByCharacter(character.id);
+    }
+  } else {
+    menus = getMenusByCharacter(character.id);
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -123,38 +141,47 @@ export default function CharacterPage({ params }: Props) {
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {menus.map((menu) => (
-                <Link
-                  key={menu.id}
-                  href={`/chat?character=${character.id}&menu=${menu.id}`}
-                  className="group block bg-white rounded-2xl border-2 border-gray-100 hover:border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 p-5"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={`${character.lightColor} w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0`}>
-                      {menu.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="text-sm font-black text-gray-800">{menu.title}</h3>
-                        <span className={`text-xs ${character.textColor} ${character.lightColor} px-2 py-0.5 rounded-full flex-shrink-0 font-medium whitespace-nowrap`}>
-                          {menu.estimatedSeconds < 60
-                            ? `約${menu.estimatedSeconds}秒`
-                            : `約${Math.round(menu.estimatedSeconds / 60)}分`}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1 leading-relaxed">{menu.description}</p>
-                    </div>
-                  </div>
-                  <div className={`mt-3 text-xs font-bold ${character.textColor} flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
-                    💬 チャットで頼む
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <path d="M5 12h14M12 5l7 7-7 7"/>
-                    </svg>
-                  </div>
+            {menus.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-gray-400">
+                <p className="text-sm">まだメニューがありません</p>
+                <Link href="/admin/menus" className="text-xs text-blue-500 mt-2 inline-block hover:underline">
+                  管理画面からメニューを追加する →
                 </Link>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {menus.map((menu) => (
+                  <Link
+                    key={menu.id}
+                    href={`/chat?character=${character.id}&menu=${menu.id}`}
+                    className="group block bg-white rounded-2xl border-2 border-gray-100 hover:border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 p-5"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`${character.lightColor} w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0`}>
+                        {menu.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="text-sm font-black text-gray-800">{menu.title}</h3>
+                          <span className={`text-xs ${character.textColor} ${character.lightColor} px-2 py-0.5 rounded-full flex-shrink-0 font-medium whitespace-nowrap`}>
+                            {menu.estimatedSeconds < 60
+                              ? `約${menu.estimatedSeconds}秒`
+                              : `約${Math.round(menu.estimatedSeconds / 60)}分`}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1 leading-relaxed">{menu.description}</p>
+                      </div>
+                    </div>
+                    <div className={`mt-3 text-xs font-bold ${character.textColor} flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
+                      💬 チャットで頼む
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                      </svg>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
 
             <div className="mt-8 text-center">
               <Link href="/" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
