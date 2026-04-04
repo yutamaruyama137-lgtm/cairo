@@ -52,7 +52,16 @@ export async function POST(req: NextRequest) {
       userPrompt = userPrompt.replaceAll(`{{${key}}}`, value || "（未入力）");
     }
 
-    // システムプロンプト（キャラクター設定）
+    // テナント固有のトンマナ（system_prompt_suffix）を取得
+    const { data: agentConfig } = await supabaseAdmin
+      .from("tenant_agents")
+      .select("system_prompt_suffix")
+      .eq("tenant_id", DEFAULT_TENANT_ID)
+      .eq("agent_id", menu.characterId)
+      .single();
+    const tonmana = agentConfig?.system_prompt_suffix ?? "";
+
+    // システムプロンプト（キャラクター設定 + テナントトンマナ）
     const systemPrompt = `あなたはAI社員「${character.name}」です。${character.department}の担当です。
 役割：${character.role}
 
@@ -62,7 +71,7 @@ export async function POST(req: NextRequest) {
 - 日本のビジネス慣習を理解した内容にする
 - マークダウン形式で、見やすく整理して出力する
 - 「〜かもしれません」より「〜です」と断言する
-
+${tonmana ? `\n${tonmana}` : ""}
 ${character.greeting}`;
 
     const startedAt = Date.now();
