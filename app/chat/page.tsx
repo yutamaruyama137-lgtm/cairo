@@ -145,7 +145,7 @@ function ChatContent() {
 
   // ── ドキュメント検出 ────────────────────────────────────────────────────────
   function isDocument(content: string): boolean {
-    return content.length > 400 || /^#{1,3} /m.test(content);
+    return content.length > 150 || /^#{1,3} /m.test(content) || /\n/.test(content);
   }
 
   // ackヘッダーとドキュメント本文を分離
@@ -308,7 +308,22 @@ function ChatContent() {
       let firstChunk = true;
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          // ストリーミング完了 → ドキュメント系はパネルを自動で開く
+          setConversations((prev) => {
+            const conv = prev.find((c) => c.id === convId);
+            const lastMsg = conv?.messages[conv.messages.length - 1];
+            if (lastMsg?.id === aiMsgId) {
+              const { doc } = splitContent(lastMsg.content);
+              if (isDocument(doc)) {
+                setArtifactMsgId(aiMsgId);
+                setArtifactOpen(true);
+              }
+            }
+            return prev;
+          });
+          break;
+        }
         const chunk = decoder.decode(value, { stream: true });
         if (firstChunk) {
           setIsLoading(false); // 最初のテキストが来たらスピナーを消す

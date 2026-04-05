@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   generateProposalDocx,
   generateInvoiceDocx,
+  generateMinutesDocx,
   generateReportDocx,
   detectDocumentType,
 } from "@/lib/docx-generators";
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
   try {
     const { content, type, filename } = await req.json() as {
       content: string;
-      type?: "invoice" | "proposal" | "report" | "auto";
+      type?: "invoice" | "proposal" | "minutes" | "report" | "auto";
       filename?: string;
     };
 
@@ -36,6 +37,9 @@ export async function POST(req: NextRequest) {
         break;
       case "proposal":
         buffer = await generateProposalDocx(content);
+        break;
+      case "minutes":
+        buffer = await generateMinutesDocx(content);
         break;
       default:
         buffer = await generateReportDocx(content);

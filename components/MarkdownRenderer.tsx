@@ -13,11 +13,37 @@ interface Props {
 
 export default function MarkdownRenderer({ content, showActions = false }: Props) {
   const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownloadDocx = async () => {
+    setDownloading(true);
+    try {
+      const title = content.match(/^#{1,3} (.+)/m)?.[1] ?? "output";
+      const filename = title.slice(0, 40).replace(/[^\w\-]/g, "_");
+      const res = await fetch("/api/export/docx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, type: "auto", filename }),
+      });
+      if (!res.ok) throw new Error("生成失敗");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${filename}.docx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Word出力に失敗しました");
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -29,6 +55,13 @@ export default function MarkdownRenderer({ content, showActions = false }: Props
             className="text-xs bg-white border border-gray-200 text-gray-500 hover:text-gray-700 rounded-lg px-2.5 py-1 shadow-sm transition-colors"
           >
             {copied ? "✓ コピー" : "コピー"}
+          </button>
+          <button
+            onClick={handleDownloadDocx}
+            disabled={downloading}
+            className="text-xs bg-white border border-blue-200 text-blue-600 hover:bg-blue-50 rounded-lg px-2.5 py-1 shadow-sm transition-colors disabled:opacity-50"
+          >
+            {downloading ? "..." : "Word"}
           </button>
         </div>
       )}
