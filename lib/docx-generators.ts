@@ -6,7 +6,7 @@
 
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-  AlignmentType, WidthType, BorderStyle, ShadingType,
+  HeadingLevel, AlignmentType, WidthType, BorderStyle, ShadingType,
   Header, Footer, PageNumber, PageBreak, convertInchesToTwip,
 } from "docx";
 
@@ -92,17 +92,20 @@ function markdownToBlocks(md: string): (Paragraph | Table)[] {
 
     if (line.startsWith("## ")) {
       blocks.push(new Paragraph({
+        heading: HeadingLevel.HEADING_1,
         children: [bold(line.slice(3), 26, "1a1a2e")],
         border: { bottom: { style: BorderStyle.SINGLE, size: 2, color: "3b82f6" } },
         spacing: { before: 400, after: 180 },
       }));
     } else if (line.startsWith("### ")) {
       blocks.push(new Paragraph({
+        heading: HeadingLevel.HEADING_2,
         children: [bold(line.slice(4), 23, "374151")],
         spacing: { before: 280, after: 100 },
       }));
     } else if (line.startsWith("#### ")) {
       blocks.push(new Paragraph({
+        heading: HeadingLevel.HEADING_3,
         children: [bold(line.slice(5), 21, "6b7280")],
         spacing: { before: 160, after: 80 },
       }));
@@ -274,25 +277,30 @@ export async function generateProposalDocx(content: string): Promise<Buffer> {
   // ── 本文 children ──────────────────────────────────────────────
   const bodyChildren: (Paragraph | Table)[] = [];
 
-  for (const section of proposalSections) {
-    // セクションヘッダーブロック
-    bodyChildren.push(...buildProposalSectionHeader(section.heading));
+  if (proposalSections.length === 0) {
+    // セクションが見つからない場合のフォールバック
+    bodyChildren.push(...markdownToBlocks(content));
+  } else {
+    for (const section of proposalSections) {
+      // セクションヘッダーブロック
+      bodyChildren.push(...buildProposalSectionHeader(section.heading));
 
-    // セクション本文のパース（種別で処理を分岐）
-    const sectionType = detectSectionType(section.heading);
+      // セクション本文のパース（種別で処理を分岐）
+      const sectionType = detectSectionType(section.heading);
 
-    if (sectionType === "effect") {
-      // 「期待される効果」— テーブルを含む可能性あり
-      bodyChildren.push(...buildEffectSection(section.body));
-    } else if (sectionType === "steps") {
-      // 「導入ステップ」— 番号付きタイムライン風
-      bodyChildren.push(...buildStepsSection(section.body));
-    } else {
-      // その他セクション — 汎用変換
-      bodyChildren.push(...markdownToBlocks(section.body));
+      if (sectionType === "effect") {
+        // 「期待される効果」— テーブルを含む可能性あり
+        bodyChildren.push(...buildEffectSection(section.body));
+      } else if (sectionType === "steps") {
+        // 「導入ステップ」— 番号付きタイムライン風
+        bodyChildren.push(...buildStepsSection(section.body));
+      } else {
+        // その他セクション — 汎用変換
+        bodyChildren.push(...markdownToBlocks(section.body));
+      }
+
+      bodyChildren.push(spacer(160, 0));
     }
-
-    bodyChildren.push(spacer(160, 0));
   }
 
   // ── Document 組み立て ──────────────────────────────────────────
@@ -414,6 +422,7 @@ function buildProposalSectionHeader(heading: string): Paragraph[] {
     const title = match[2].trim();
     return [
       new Paragraph({
+        heading: HeadingLevel.HEADING_1,
         children: [
           new TextRun({ text: num + " ", bold: true, size: 36, color: "3b82f6" }),
           new TextRun({ text: title, bold: true, size: 30, color: "1a1a2e" }),
@@ -429,6 +438,7 @@ function buildProposalSectionHeader(heading: string): Paragraph[] {
   // 番号なしヘッダー
   return [
     new Paragraph({
+      heading: HeadingLevel.HEADING_1,
       children: [bold(heading, 28, "1a1a2e")],
       border: { bottom: { style: BorderStyle.SINGLE, size: 2, color: "3b82f6" } },
       spacing: { before: 480, after: 200 },
@@ -485,6 +495,7 @@ function buildEffectTable(tableLines: string[]): Table | null {
 
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
+    columnWidths: [3000, 2400, 2400],
     rows: [
       // ヘッダー行
       new TableRow({
@@ -540,30 +551,36 @@ function buildEffectTable(tableLines: string[]): Table | null {
 }
 
 // ── 「導入ステップ」セクション ───────────────────────────────────
-// 番号付きリストをタイムライン風に整形
+// 番号付きリストをシンプルな段落として出力
 
 function buildStepsSection(body: string): (Paragraph | Table)[] {
   const blocks: (Paragraph | Table)[] = [];
   const lines = body.split("\n");
-  let stepCounter = 0;
 
   for (const line of lines) {
     // ### サブ見出し
     if (line.startsWith("### ")) {
       blocks.push(new Paragraph({
+        heading: HeadingLevel.HEADING_2,
         children: [bold(line.slice(4), 22, "374151")],
         spacing: { before: 240, after: 80 },
       }));
       continue;
     }
 
-    // 番号付きリスト（1. / 2. ...）
+    // 番号付きリスト（1. / 2. ...）→ シンプルなParagraphとして出力
     const numMatch = line.match(/^(\d+)\.\s+(.+)/);
     if (numMatch) {
-      stepCounter++;
       const stepNum = numMatch[1];
       const stepText = numMatch[2];
-      blocks.push(buildTimelineStep(stepNum, stepText));
+      blocks.push(new Paragraph({
+        children: [
+          new TextRun({ text: `${stepNum}. `, bold: true, size: 22, color: "3b82f6" }),
+          ...parseInline(stepText, 22, "1a1a2e"),
+        ],
+        spacing: { before: 120, after: 80 },
+        indent: { left: 200 },
+      }));
       continue;
     }
 
@@ -579,7 +596,7 @@ function buildStepsSection(body: string): (Paragraph | Table)[] {
 
     // 空行
     if (line.trim() === "" || line === "---") {
-      if (stepCounter > 0) blocks.push(spacer(60, 40));
+      blocks.push(spacer(60, 40));
       continue;
     }
 
@@ -596,53 +613,8 @@ function buildStepsSection(body: string): (Paragraph | Table)[] {
   return blocks;
 }
 
-function buildTimelineStep(num: string, text: string): Table {
-  return new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [
-      new TableRow({
-        children: [
-          // 番号バッジ
-          new TableCell({
-            width: { size: 600, type: WidthType.DXA },
-            shading: { type: ShadingType.SOLID, color: "3b82f6", fill: "3b82f6" },
-            children: [new Paragraph({
-              children: [new TextRun({ text: `${num}`, bold: true, color: "FFFFFF", size: 26 })],
-              alignment: AlignmentType.CENTER,
-              spacing: { before: 100, after: 100 },
-            })],
-            margins: { top: 60, bottom: 60, left: 60, right: 60 },
-            borders: {
-              top: { style: BorderStyle.NONE, size: 0 },
-              bottom: { style: BorderStyle.NONE, size: 0 },
-              left: { style: BorderStyle.NONE, size: 0 },
-              right: { style: BorderStyle.NONE, size: 0 },
-            },
-          }),
-          // ステップ内容
-          new TableCell({
-            shading: { type: ShadingType.SOLID, color: "f8fafc", fill: "f8fafc" },
-            children: [new Paragraph({
-              children: parseInline(text, 22, "1a1a2e"),
-              spacing: { before: 80, after: 80 },
-            })],
-            margins: { top: 60, bottom: 60, left: 160, right: 160 },
-            borders: {
-              top: { style: BorderStyle.NONE, size: 0 },
-              bottom: { style: BorderStyle.NONE, size: 0 },
-              left: { style: BorderStyle.SINGLE, size: 4, color: "3b82f6" },
-              right: { style: BorderStyle.NONE, size: 0 },
-            },
-          }),
-        ],
-      }),
-    ],
-    margins: { top: 80, bottom: 80 },
-  });
-}
-
 // ────────────────────────────────────────────────────────────────
-// 議事録生成（新規）
+// 議事録生成
 // ────────────────────────────────────────────────────────────────
 
 /**
@@ -694,9 +666,22 @@ export async function generateMinutesDocx(content: string): Promise<Buffer> {
   // ── 本文 children 組み立て ──────────────────────────────────────
   const bodyChildren: (Paragraph | Table)[] = [];
 
-  // ヘッダー部：日時・参加者を2カラムで配置
-  bodyChildren.push(buildMinutesHeader(docTitle, displayDate, attendees));
-  bodyChildren.push(spacer(200, 200));
+  // ヘッダー部：タイトル・日時・参加者をParagraphで配置（テーブル不要）
+  bodyChildren.push(new Paragraph({
+    heading: HeadingLevel.HEADING_1,
+    children: [bold(docTitle, 36, "1a1a2e")],
+    border: { bottom: { style: BorderStyle.THICK, size: 8, color: "3b82f6" } },
+    spacing: { before: 0, after: 200 },
+  }));
+  bodyChildren.push(new Paragraph({
+    children: [normal(`日時: ${displayDate}`, 22, "374151")],
+    spacing: { before: 80, after: 60 },
+  }));
+  bodyChildren.push(new Paragraph({
+    children: [normal(`参加者: ${attendees || "—"}`, 22, "374151")],
+    spacing: { before: 0, after: 200 },
+  }));
+  bodyChildren.push(spacer(100, 100));
 
   for (const section of minutesSections) {
     const sectionType = detectMinutesSectionType(section.heading);
@@ -766,67 +751,6 @@ export async function generateMinutesDocx(content: string): Promise<Buffer> {
   return Buffer.from(await Packer.toBuffer(doc));
 }
 
-// ── 議事録ヘッダー（日時・参加者 2カラム） ───────────────────────
-
-function buildMinutesHeader(title: string, date: string, attendees: string): Table {
-  return new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [
-      // タイトル行（全幅）
-      new TableRow({
-        children: [
-          new TableCell({
-            columnSpan: 2,
-            shading: { type: ShadingType.SOLID, color: "1e3a5f", fill: "1e3a5f" },
-            children: [new Paragraph({
-              children: [new TextRun({ text: title, bold: true, color: "FFFFFF", size: 36 })],
-              alignment: AlignmentType.CENTER,
-              spacing: { before: 160, after: 160 },
-            })],
-            margins: { top: 120, bottom: 120, left: 200, right: 200 },
-            borders: {
-              top: { style: BorderStyle.NONE, size: 0 },
-              bottom: { style: BorderStyle.NONE, size: 0 },
-              left: { style: BorderStyle.NONE, size: 0 },
-              right: { style: BorderStyle.NONE, size: 0 },
-            },
-          }),
-        ],
-      }),
-      // 日時 / 参加者 行
-      new TableRow({
-        children: [
-          minutesMetaCell("日時", date),
-          minutesMetaCell("参加者", attendees || "—"),
-        ],
-      }),
-    ],
-  });
-}
-
-function minutesMetaCell(label: string, value: string): TableCell {
-  return new TableCell({
-    shading: { type: ShadingType.SOLID, color: "f8fafc", fill: "f8fafc" },
-    children: [
-      new Paragraph({
-        children: [gray(label, 18)],
-        spacing: { before: 80, after: 40 },
-      }),
-      new Paragraph({
-        children: [bold(value, 22, "1a1a2e")],
-        spacing: { before: 0, after: 80 },
-      }),
-    ],
-    margins: { top: 80, bottom: 80, left: 160, right: 160 },
-    borders: {
-      top: { style: BorderStyle.SINGLE, size: 2, color: "3b82f6" },
-      bottom: { style: BorderStyle.SINGLE, size: 1, color: "e5e7eb" },
-      left: { style: BorderStyle.SINGLE, size: 1, color: "e5e7eb" },
-      right: { style: BorderStyle.SINGLE, size: 1, color: "e5e7eb" },
-    },
-  });
-}
-
 // ── 議事録セクション種別判定 ─────────────────────────────────────
 
 type MinutesSectionType = "decisions" | "actions" | "generic";
@@ -841,6 +765,7 @@ function detectMinutesSectionType(heading: string): MinutesSectionType {
 
 function buildMinutesSectionHeading(heading: string): Paragraph {
   return new Paragraph({
+    heading: HeadingLevel.HEADING_1,
     children: [bold(heading, 26, "1a1a2e")],
     border: {
       left: { style: BorderStyle.THICK, size: 8, color: "3b82f6" },
@@ -936,14 +861,9 @@ function buildActionsTable(tableLines: string[]): Table | null {
   const headers = parseRow(filtered[0]);
   const rows = filtered.slice(2).map(parseRow);
 
-  // 列幅配分（# / アクション / 担当 / 期日）
-  const colWidths = headers.length === 4
-    ? [600, 4200, 1800, 1600]
-    : undefined;
-
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
-    ...(colWidths ? { columnWidths: colWidths } : {}),
+    columnWidths: [400, 4000, 1600, 1600],
     rows: [
       // ヘッダー行
       new TableRow({
@@ -1144,7 +1064,7 @@ export async function generateInvoiceDocx(content: string): Promise<Buffer> {
 }
 
 // ────────────────────────────────────────────────────────────────
-// 汎用レポート生成（現状維持）
+// 汎用レポート生成
 // ────────────────────────────────────────────────────────────────
 
 export async function generateReportDocx(content: string): Promise<Buffer> {
@@ -1314,6 +1234,8 @@ function tableBordersNone() {
 export function detectDocumentType(content: string): "invoice" | "proposal" | "minutes" | "report" {
   if (/請求書|invoice|請求番号|支払期限|合計金額/.test(content)) return "invoice";
   if (/議事録|アジェンダ|決定事項|ネクストアクション|参加者/.test(content)) return "minutes";
-  if (/提案書|proposal|課題|ソリューション|見積|ご提案/.test(content)) return "proposal";
+  if (/提案書|proposal|課題|ソリューション|見積/.test(content)) return "proposal";
   return "report";
 }
+
+// InvoiceData と ProposalData は上部の interface 定義で export 済み

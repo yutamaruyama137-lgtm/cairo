@@ -47,10 +47,11 @@ export async function POST(req: NextRequest) {
 
     const safeFilename = (filename ?? `${docType}-${new Date().toISOString().slice(0, 10)}`).replace(/[^\w\-\.]/g, "_");
 
-    return new NextResponse(buffer as unknown as BodyInit, {
+    return new Response(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(safeFilename)}.docx`,
+        "Content-Disposition": `attachment; filename="${safeFilename}.docx"`,
+        "Content-Length": String(buffer.length),
       },
     });
   } catch (err) {
