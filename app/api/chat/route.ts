@@ -10,6 +10,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getTenantAgentConfigs } from "@/lib/db/admin";
 import { getCharacter } from "@/data/characters";
+import { ALL_TOOLS, executeTool } from "@/lib/tools";
 
 const client = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -78,32 +79,82 @@ export async function POST(request: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
+        const enqueue = (text: string) => controller.enqueue(encoder.encode(text));
         try {
           if (client) {
-            const claudeStream = await client.messages.stream({
-              model: "claude-sonnet-4-6",
-              max_tokens: 4096,
-              system: systemPrompt,
-              messages: messages,
-            });
+            // Tool Use ループ（最大3回）
+            let loopMessages = messages as Anthropic.MessageParam[];
+            let stepCount = 0;
+            const MAX_STEPS = 3;
 
-            for await (const chunk of claudeStream) {
-              if (
-                chunk.type === "content_block_delta" &&
-                chunk.delta.type === "text_delta"
-              ) {
-                outputChunks.push(chunk.delta.text);
-                controller.enqueue(encoder.encode(chunk.delta.text));
+            while (stepCount < MAX_STEPS) {
+              stepCount++;
+
+              // 非ストリーミングでツール呼び出しをチェック
+              const checkResponse = await client.messages.create({
+                model: "claude-sonnet-4-6",
+                max_tokens: 8192,
+                system: systemPrompt,
+                tools: ALL_TOOLS as Anthropic.Tool[],
+                messages: loopMessages,
+              });
+
+              const toolUseBlocks = checkResponse.content.filter(
+                (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
+              );
+
+              if (toolUseBlocks.length > 0) {
+                // ツール実行
+                const toolResults: Anthropic.ToolResultBlockParam[] = [];
+                for (const toolBlock of toolUseBlocks) {
+                  enqueue(`\n🔧 **${toolBlock.name}** を確認中...\n`);
+                  const result = await executeTool(
+                    toolBlock.name,
+                    toolBlock.input as Record<string, string>,
+                    DEFAULT_TENANT_ID,
+                    userId ?? undefined
+                  );
+                  toolResults.push({
+                    type: "tool_result",
+                    tool_use_id: toolBlock.id,
+                    content: result,
+                  });
+                }
+                loopMessages = [
+                  ...loopMessages,
+                  { role: "assistant", content: checkResponse.content },
+                  { role: "user", content: toolResults },
+                ];
+                continue;
               }
+
+              // ツールなし → ストリーミングで最終応答
+              const claudeStream = await client.messages.stream({
+                model: "claude-sonnet-4-6",
+                max_tokens: 8192,
+                system: systemPrompt,
+                messages: loopMessages,
+              });
+
+              for await (const chunk of claudeStream) {
+                if (
+                  chunk.type === "content_block_delta" &&
+                  chunk.delta.type === "text_delta"
+                ) {
+                  outputChunks.push(chunk.delta.text);
+                  enqueue(chunk.delta.text);
+                }
+              }
+              break;
             }
           } else {
             const mock = `${character.name}です！（デモモード）\n\nAPIキーを設定すると実際のAI応答が返ります。\n\`.env.local\` に \`ANTHROPIC_API_KEY\` を設定してください。`;
             outputChunks.push(mock);
-            controller.enqueue(encoder.encode(mock));
+            enqueue(mock);
           }
         } catch (err) {
           const errMsg = `エラーが発生しました: ${err instanceof Error ? err.message : "Unknown error"}`;
-          controller.enqueue(encoder.encode(errMsg));
+          enqueue(errMsg);
         } finally {
           controller.close();
 

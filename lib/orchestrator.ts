@@ -15,25 +15,19 @@ import Anthropic from "@anthropic-ai/sdk";
 import { ALL_TOOLS, executeTool } from "@/lib/tools";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getTenantAgentConfigs } from "@/lib/db/admin";
-import { characters } from "@/data/characters";
 import { getAgent } from "@/lib/agents/index";
+import { buildLayeredSystemPrompt } from "@/lib/prompts";
 
 const client = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   : null;
-
-const FORMAT_INSTRUCTIONS: Record<string, string> = {
-  markdown: "Markdownで見やすく整形して出力してください。",
-  bullet:   "箇条書き（- または ・）で整理して出力してください。",
-  table:    "できるかぎり表形式（Markdownテーブル）で出力してください。",
-  plain:    "プレーンテキストで、装飾なしで出力してください。",
-};
 
 export interface AgenticInput {
   goal: string;
   characterId: string;
   tenantId: string;
   userId?: string;
+  skillId?: string;
   conversationHistory?: Array<{ role: "user" | "assistant"; content: string }>;
 }
 
@@ -57,13 +51,14 @@ export function orchestrateStream(input: AgenticInput): ReadableStream {
         // テナントのエージェント設定を取得
         const agentConfigs = await getTenantAgentConfigs(input.tenantId);
         const agentConfig = agentConfigs.find((c) => c.agent_id === input.characterId);
-        const character = characters.find((c) => c.id === input.characterId) ?? characters[0];
 
-        // 出力フォーマット指示
-        const formatInstruction = FORMAT_INSTRUCTIONS[agentConfig?.output_format ?? "markdown"];
-
-        // システムプロンプト組み立て
-        const systemPrompt = buildSystemPrompt(character, agentConfig?.custom_system_prompt ?? null, formatInstruction);
+        // 3層プロンプト構造でシステムプロンプトを組み立て
+        const systemPrompt = buildLayeredSystemPrompt({
+          characterId: input.characterId,
+          menuId: input.skillId,
+          tenantSuffix: agentConfig?.custom_system_prompt ?? null,
+          outputFormat: agentConfig?.output_format ?? "markdown",
+        });
 
         // 会話履歴 + 今回のゴール
         const messages: Anthropic.MessageParam[] = [
@@ -79,20 +74,37 @@ export function orchestrateStream(input: AgenticInput): ReadableStream {
         let stepCount = 0;
         const MAX_STEPS = 5;
         const toolCallsMade: string[] = [];
+        let finalOutputText = "";
 
         while (stepCount < MAX_STEPS) {
           stepCount++;
 
-          const response = await client.messages.create({
+          // ストリーミングでClaudeを呼び出す
+          const claudeStream = client.messages.stream({
             model: "claude-sonnet-4-6",
-            max_tokens: 4096,
+            max_tokens: 8192,
             system: systemPrompt,
             tools: ALL_TOOLS as Anthropic.Tool[],
             messages: loopMessages,
           });
 
-          // ツール呼び出しがある場合
-          const toolUseBlocks = response.content.filter(
+          let fullText = "";
+
+          // テキストデルタをリアルタイムでストリーミング
+          for await (const event of claudeStream) {
+            if (
+              event.type === "content_block_delta" &&
+              event.delta.type === "text_delta"
+            ) {
+              enqueue(event.delta.text);
+              fullText += event.delta.text;
+            }
+          }
+
+          // ストリーム完了後にfinalMessageを取得してツール呼び出しを確認
+          const finalMessage = await claudeStream.finalMessage();
+
+          const toolUseBlocks = finalMessage.content.filter(
             (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
           );
 
@@ -144,29 +156,24 @@ export function orchestrateStream(input: AgenticInput): ReadableStream {
             // 会話に追加してループ継続
             loopMessages = [
               ...loopMessages,
-              { role: "assistant", content: response.content },
+              { role: "assistant", content: finalMessage.content },
               { role: "user", content: toolResults },
             ];
             continue;
           }
 
-          // テキスト応答を取得してストリーム
-          const textBlock = response.content.find(
-            (b): b is Anthropic.TextBlock => b.type === "text"
-          );
-          if (textBlock) {
-            enqueue(textBlock.text);
-          }
+          // テキスト応答を記録（既にストリーミング済み）
+          finalOutputText = fullText;
 
           // DBに保存（fire and forget）
           if (input.userId) {
             supabaseAdmin.from("menu_executions").insert({
               tenant_id: input.tenantId,
               user_id: input.userId,
-              menu_id: `${input.characterId}-agentic`,
+              menu_id: input.skillId ?? `${input.characterId}-agentic`,
               character_id: input.characterId,
               inputs: { goal: input.goal },
-              output: textBlock?.text ?? "",
+              output: finalOutputText,
               status: "completed",
             }).then(({ error }) => {
               if (error) console.error("[orchestrator] DB save error:", error);
@@ -177,7 +184,7 @@ export function orchestrateStream(input: AgenticInput): ReadableStream {
         }
 
         // MAX_STEPS を使い切ってもテキスト応答がなかった場合
-        if (stepCount >= MAX_STEPS) {
+        if (stepCount >= MAX_STEPS && !finalOutputText) {
           enqueue("\n（最大ステップ数に達しました。処理を終了します。）");
         }
       } catch (err) {
@@ -187,32 +194,4 @@ export function orchestrateStream(input: AgenticInput): ReadableStream {
       }
     },
   });
-}
-
-function buildSystemPrompt(
-  character: { name: string; department: string; role: string; description: string; greeting: string },
-  customPrompt: string | null,
-  formatInstruction: string
-): string {
-  let prompt = `あなたは「${character.name}」です。${character.department}の${character.role}として、ユーザーの仕事をサポートするAI社員です。
-
-【プロフィール】
-- 名前: ${character.name}
-- 所属: ${character.department}
-- 役割: ${character.role}
-- 専門: ${character.description}
-
-【行動指針】
-- 常に日本語で応答してください
-- フレンドリーで親切な口調を保ちつつ、専門的な回答をしてください
-- 回答は具体的で実用的にしてください
-- ${formatInstruction}
-- 必要に応じてツール（get_company_info, search_knowledge）を使って会社の情報を確認してから回答してください
-- ツールを使う場合は結果を解釈して、そのまま返すのではなく文章に組み込んでください`;
-
-  if (customPrompt) {
-    prompt += `\n\n【この会社固有の指示】\n${customPrompt}`;
-  }
-
-  return prompt;
 }

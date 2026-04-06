@@ -128,3 +128,26 @@ html {
   border-radius: 4px;
   font-size: 0.85em;
 }
+
+/* docx-preview ライブラリのレンダリングスタイル */
+.docx-preview-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.docx-preview-container .docx-wrapper {
+  background: #f0f0f0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.docx-preview-container .docx-wrapper > section.docx {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-radius: 2px;
+  width: 100%;
+  max-width: 794px; /* A4幅相当 */
+}

@@ -55,7 +55,7 @@ function ChatContent() {
   const [selectedCharId, setSelectedCharId] = useState(initCharId);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [agenticMode, setAgenticMode] = useState(false);
+  const [agenticMode, setAgenticMode] = useState(() => !!initMenuId);
   const [adminConfig, setAdminConfig] = useState<Record<string, boolean>>({});
   const [storageLoaded, setStorageLoaded] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -145,7 +145,10 @@ function ChatContent() {
 
   // ── ドキュメント検出 ────────────────────────────────────────────────────────
   function isDocument(content: string): boolean {
-    return content.length > 150 || /^#{1,3} /m.test(content) || /\n/.test(content);
+    // 提案書・議事録・請求書・レポート等の文書型コンテンツのみ true
+    const docKeywords = /提案書|議事録|請求書|見積書|契約書|レポート|報告書|マニュアル|手順書|企画書|調査レポート|ご提案/;
+    const hasDocStructure = /^#{1,3} /m.test(content) && content.length > 400;
+    return docKeywords.test(content) || hasDocStructure;
   }
 
   // ackヘッダーとドキュメント本文を分離
@@ -263,6 +266,7 @@ function ChatContent() {
         ? {
             goal: trimmed,
             characterId: convCharId,
+            skillId: initMenuId ?? undefined,
             conversationHistory: allMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
           }
         : {
